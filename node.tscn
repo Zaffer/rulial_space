@@ -1,0 +1,23 @@
+[gd_scene load_steps=5 format=3 uid="uid://oljhakogse3d"]
+
+[ext_resource type="Script" path="res://node.gd" id="1_oqanj"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_nkxki"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sebyo"]
+albedo_color = Color(0.2, 0.6, 1, 1)
+emission_enabled = true
+emission = Color(0.1, 0.3, 0.8, 1)
+emission_energy_multiplier = 0.5
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_k1j32"]
+
+[node name="node" type="RigidBody3D" groups=["nodes"]]
+script = ExtResource("1_oqanj")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_nkxki")
+surface_material_override/0 = SubResource("StandardMaterial3D_sebyo")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_k1j32")
