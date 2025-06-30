@@ -62,10 +62,20 @@ text = "❌ Close"
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="ConnectLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer/ConnectSection"]
+[node name="ConnectHeaderContainer" type="HBoxContainer" parent="Panel/MarginContainer/VBoxContainer/ConnectSection"]
+layout_mode = 2
+
+[node name="ConnectLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer/ConnectSection/ConnectHeaderContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "CONNECT:"
+
+[node name="ConnectionStatusLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer/ConnectSection/ConnectHeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "🔴 Disconnected"
+horizontal_alignment = 2
 
 [node name="HSeparator" type="HSeparator" parent="Panel/MarginContainer/VBoxContainer/ConnectSection"]
 layout_mode = 2

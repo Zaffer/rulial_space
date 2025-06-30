@@ -25,8 +25,10 @@ func _ready():
 	
 	# Connect multiplayer signals
 	multiplayer_manager.connection_established.connect(_on_multiplayer_connected)
-	multiplayer_manager.peer_joined.connect(_on_peer_joined)
-	multiplayer_manager.peer_left.connect(_on_peer_left)
+	
+	# Connect to built-in multiplayer signals instead of custom ones
+	multiplayer.peer_connected.connect(_on_peer_joined)
+	multiplayer.peer_disconnected.connect(_on_peer_left)
 	
 	# Find the camera (assuming it's added to the scene)
 	camera = get_viewport().get_camera_3d()

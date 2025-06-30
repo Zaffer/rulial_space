@@ -3,11 +3,9 @@ extends Node
 # TODO: Consider cleaning up peer_connections entries after signaling is complete,
 # since they're only needed for WebRTC handshake, not ongoing mesh communication
 
-# Simple signals for the game
+# Simplified signals - only what we actually need beyond built-in ones
 signal connection_established
 signal connection_failed
-signal peer_joined(peer_id: int)
-signal peer_left(peer_id: int)
 signal invite_token_ready(token: String)
 signal response_token_ready(token: String)
 
@@ -49,7 +47,7 @@ func create_peer_invite_token():
 		my_peer_id = _generate_mesh_peer_id()
 		webrtc_multiplayer.create_mesh(my_peer_id)
 		multiplayer.multiplayer_peer = webrtc_multiplayer
-		connection_established.emit()
+		# Don't emit connection_established here - wait for actual peer connections
 	
 	# Generate peer ID for the new connection
 	var new_peer_id = _generate_mesh_peer_id()
@@ -100,8 +98,7 @@ func join_mesh_with_token(invite_token: String):
 	webrtc_multiplayer.create_mesh(my_peer_id)
 	multiplayer.multiplayer_peer = webrtc_multiplayer
 	
-	# Emit connection established for the joiner
-	connection_established.emit()
+	# Don't emit connection_established here - wait for actual peer connections
 	
 	# Get the inviting peer's ID from token
 	var inviting_peer_id = int(token_data.get("sender_id"))  # Convert to int
@@ -287,17 +284,20 @@ func _receive_player_data(position: Vector3, rotation: Vector3):
 			_create_remote_player(sender_id)
 
 
-# Signal handlers
+# Signal handlers - handle remote player management directly
 func _on_peer_connected(peer_id: int):
 	print("!!! MESH PEER CONNECTED EVENT: ", peer_id, " !!!")
 	print("Total peers now: ", get_mesh_peers().size())
 	print("All connected peers: ", get_mesh_peers())
-	peer_joined.emit(peer_id)
+	
+	# Create remote player directly when peer connects
+	_create_remote_player(peer_id)
 
 func _on_peer_disconnected(peer_id: int):
 	print("!!! MESH PEER DISCONNECTED EVENT: ", peer_id, " !!!")
-	_remove_remote_player(peer_id)  # Clean up remote player
-	peer_left.emit(peer_id)
+	
+	# Clean up remote player directly when peer disconnects
+	_remove_remote_player(peer_id)
 
 # Clean up mesh network
 func stop_mesh():
@@ -321,6 +321,37 @@ func get_mesh_peers() -> Array:
 	if not multiplayer.multiplayer_peer:
 		return []
 	return multiplayer.get_peers()
+
+# Get WebRTC connection state for a specific peer
+func get_peer_connection_state(peer_id: int) -> int:
+	if peer_signaling_data.has(peer_id):
+		return peer_signaling_data[peer_id].connection.get_connection_state()
+	return WebRTCPeerConnection.STATE_NEW
+
+# Get all peer connection states for display
+func get_all_peer_connection_states() -> Dictionary:
+	var states = {}
+	for peer_id in peer_signaling_data.keys():
+		states[peer_id] = peer_signaling_data[peer_id].connection.get_connection_state()
+	return states
+
+# Convert WebRTC state enum to readable string
+static func connection_state_to_string(state: int) -> String:
+	match state:
+		WebRTCPeerConnection.STATE_NEW:
+			return "🟡 New"
+		WebRTCPeerConnection.STATE_CONNECTING:
+			return "🟡 Connecting"
+		WebRTCPeerConnection.STATE_CONNECTED:
+			return "🟢 Connected"
+		WebRTCPeerConnection.STATE_DISCONNECTED:
+			return "🔴 Disconnected"
+		WebRTCPeerConnection.STATE_FAILED:
+			return "❌ Failed"
+		WebRTCPeerConnection.STATE_CLOSED:
+			return "⚫ Closed"
+		_:
+			return "❓ Unknown"
 
 # Check if mesh is connected
 func is_mesh_connected() -> bool:
