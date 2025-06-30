@@ -1,0 +1,18 @@
+[gd_scene load_steps=5 format=3 uid="uid://ctth6jm6dk0r4"]
+
+[ext_resource type="Script" path="res://main.gd" id="1_88i1e"]
+[ext_resource type="PackedScene" uid="uid://oljhakogse3d" path="res://node.tscn" id="1_o5ujc"]
+[ext_resource type="PackedScene" uid="uid://c702ly2b0yfmj" path="res://edge.tscn" id="2_uksh8"]
+[ext_resource type="Script" path="res://camera.gd" id="4_xuyuy"]
+
+[node name="main" type="Node3D"]
+script = ExtResource("1_88i1e")
+NodeScene = ExtResource("1_o5ujc")
+EdgeScene = ExtResource("2_uksh8")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.880254, 0.474503, 0, -0.474503, 0.880254, 0, 4.25621, 6.95967)
+script = ExtResource("4_xuyuy")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.890315, -0.0558857, 0.451902, -0.352002, 0.545085, 0.760906, -0.288849, -0.836516, 0.465625, 4, 4, 6)

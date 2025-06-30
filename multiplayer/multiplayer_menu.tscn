@@ -1,0 +1,153 @@
+[gd_scene load_steps=2 format=3 uid="uid://b7s38eoud41kf"]
+
+[ext_resource type="Script" path="res://multiplayer/multiplayer_menu.gd" id="1_8qy2x"]
+
+[node name="MultiplayerMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_8qy2x")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -250.0
+offset_right = 200.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="MenuButtonsContainer" type="HBoxContainer" parent="Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="PortalLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer/MenuButtonsContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "🧿Multiplayer Wormhole"
+
+[node name="Spacer" type="Label" parent="Panel/MarginContainer/VBoxContainer/MenuButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CloseBtn" type="Button" parent="Panel/MarginContainer/VBoxContainer/MenuButtonsContainer"]
+layout_mode = 2
+text = "❌ Close"
+
+[node name="ConnectSection" type="VBoxContainer" parent="Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ConnectLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer/ConnectSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "CONNECT:"
+
+[node name="HSeparator" type="HSeparator" parent="Panel/MarginContainer/VBoxContainer/ConnectSection"]
+layout_mode = 2
+
+[node name="InviteSection" type="VBoxContainer" parent="Panel/MarginContainer/VBoxContainer/ConnectSection"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="InviteButtonsContainer" type="HBoxContainer" parent="Panel/MarginContainer/VBoxContainer/ConnectSection/InviteSection"]
+layout_mode = 2
+
+[node name="PasteInviteBtn" type="Button" parent="Panel/MarginContainer/VBoxContainer/ConnectSection/InviteSection/InviteButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Paste Invite 📥"
+
+[node name="OrLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer/ConnectSection/InviteSection/InviteButtonsContainer"]
+layout_mode = 2
+text = "or"
+
+[node name="CreateInviteBtn" type="Button" parent="Panel/MarginContainer/VBoxContainer/ConnectSection/InviteSection/InviteButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Create Invite 📤"
+
+[node name="InviteTokenField" type="TextEdit" parent="Panel/MarginContainer/VBoxContainer/ConnectSection/InviteSection"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+placeholder_text = "invite token"
+editable = false
+wrap_mode = 1
+
+[node name="ResponseSection" type="VBoxContainer" parent="Panel/MarginContainer/VBoxContainer/ConnectSection"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="ResponseTokenField" type="TextEdit" parent="Panel/MarginContainer/VBoxContainer/ConnectSection/ResponseSection"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+placeholder_text = "response token"
+editable = false
+wrap_mode = 1
+
+[node name="ResponseButtonsContainer" type="HBoxContainer" parent="Panel/MarginContainer/VBoxContainer/ConnectSection/ResponseSection"]
+layout_mode = 2
+
+[node name="CopyResponseBtn" type="Button" parent="Panel/MarginContainer/VBoxContainer/ConnectSection/ResponseSection/ResponseButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Copy Response 📤"
+
+[node name="OrLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer/ConnectSection/ResponseSection/ResponseButtonsContainer"]
+layout_mode = 2
+text = "or"
+
+[node name="PasteResponseBtn" type="Button" parent="Panel/MarginContainer/VBoxContainer/ConnectSection/ResponseSection/ResponseButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Paste Response 📥"
+
+[node name="ClearTokensBtn" type="Button" parent="Panel/MarginContainer/VBoxContainer/ConnectSection/ResponseSection"]
+layout_mode = 2
+text = "🗑️ Clear Tokens"
+
+[node name="ConnectionsSection" type="VBoxContainer" parent="Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ConnectionsLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer/ConnectionsSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "CONNECTIONS:"
+
+[node name="HSeparator2" type="HSeparator" parent="Panel/MarginContainer/VBoxContainer/ConnectionsSection"]
+layout_mode = 2
+
+[node name="ConnectionsList" type="VBoxContainer" parent="Panel/MarginContainer/VBoxContainer/ConnectionsSection"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="NoConnectionsLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer/ConnectionsSection/ConnectionsList"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+text = "No connections"

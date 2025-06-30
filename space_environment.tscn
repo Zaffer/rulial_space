@@ -1,0 +1,32 @@
+[gd_scene load_steps=6 format=3 uid="uid://l4spfcdtli1b"]
+
+[ext_resource type="Script" path="res://ambient_particles.gd" id="1_particles"]
+[ext_resource type="Texture2D" uid="uid://bi0qroktkaxus" path="res://space_panorama.jpg" id="2_space_image"]
+
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_space"]
+panorama = ExtResource("2_space_image")
+
+[sub_resource type="Sky" id="Sky_space"]
+sky_material = SubResource("PanoramaSkyMaterial_space")
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 2
+sky = SubResource("Sky_space")
+ambient_light_source = 3
+ambient_light_color = Color(0.1, 0.1, 0.3, 1)
+ambient_light_energy = 0.2
+glow_enabled = true
+glow_intensity = 2.0
+glow_bloom = 0.3
+glow_blend_mode = 0
+
+[node name="SpaceEnvironment" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.890315, -0.0558857, 0.451902, -0.352002, 0.545085, 0.760906, -0.288849, -0.836516, 0.465625, 4, 4, 6)
+
+[node name="AmbientParticles" type="GPUParticles3D" parent="."]
+script = ExtResource("1_particles")
