@@ -44,7 +44,6 @@ func setup_multiplayer_manager(manager: Node):
 	# Connect to multiplayer manager signals
 	multiplayer_manager.invite_token_ready.connect(_on_invite_token_ready)
 	multiplayer_manager.response_token_ready.connect(_on_response_token_ready)
-	multiplayer_manager.connection_established.connect(_on_connection_established)
 	multiplayer_manager.connection_failed.connect(_on_connection_failed)
 	
 	# Connect to built-in multiplayer signals instead of custom ones
@@ -74,6 +73,7 @@ func _on_paste_invite_pressed():
 			paste_invite_btn.disabled = true
 			create_invite_btn.disabled = true
 			paste_invite_btn.text = "⏳ Generating Response..."
+			paste_response_btn.disabled = true
 			multiplayer_manager.join_mesh_with_token(clipboard_text)
 
 func _on_create_invite_pressed():
@@ -105,8 +105,8 @@ func _on_paste_response_pressed():
 	if clipboard_text.length() > 0 and _is_valid_response_token(clipboard_text):
 		connection_status_label.text = "🟡 Connecting..."
 		response_token_field.text = clipboard_text
-		paste_response_btn.disabled = true
 		copy_response_btn.disabled = true
+		paste_response_btn.disabled = true
 		paste_response_btn.text = "⏳ Connecting..."
 		multiplayer_manager.complete_mesh_connection_with_token(clipboard_text)
 	else:
@@ -143,13 +143,6 @@ func _on_response_token_ready(token: String):
 	copy_response_btn.disabled = false
 	await get_tree().create_timer(1.5).timeout
 	paste_invite_btn.text = "Paste Invite 📥"
-
-func _on_connection_established():
-	connection_status_label.text = "🟢 Connected"
-	paste_response_btn.text = "✅ Connected!"
-	# Reset to default states
-	await get_tree().create_timer(1.5).timeout
-	_on_clear_tokens_pressed()
 
 func _on_connection_failed():
 	connection_status_label.text = "🔴 Failed"

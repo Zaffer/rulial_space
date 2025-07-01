@@ -23,10 +23,7 @@ func _ready():
 	multiplayer_manager = preload("res://multiplayer/multiplayer_manager_mesh.gd").new()
 	add_child(multiplayer_manager)
 	
-	# Connect multiplayer signals
-	multiplayer_manager.connection_established.connect(_on_multiplayer_connected)
-	
-	# Connect to built-in multiplayer signals instead of custom ones
+	# Connect to built-in multiplayer signals
 	multiplayer.peer_connected.connect(_on_peer_joined)
 	multiplayer.peer_disconnected.connect(_on_peer_left)
 	
@@ -109,16 +106,6 @@ func _notification(what):
 			get_tree().quit()
 
 # Multiplayer connection handlers
-func _on_multiplayer_connected():
-	print("Multiplayer connection established!")
-	
-	# Create remote player representation
-	if not remote_player:
-		var remote_player_script = preload("res://multiplayer/remote_player.gd")
-		remote_player = Node3D.new()
-		remote_player.set_script(remote_player_script)
-		add_child(remote_player)
-
 func _on_peer_joined(peer_id: int):
 	print("Main: Peer joined with ID ", peer_id)
 

@@ -4,7 +4,6 @@ extends Node
 # since they're only needed for WebRTC handshake, not ongoing mesh communication
 
 # Simplified signals - only what we actually need beyond built-in ones
-signal connection_established
 signal connection_failed
 signal invite_token_ready(token: String)
 signal response_token_ready(token: String)
@@ -31,25 +30,20 @@ func _process(_delta):
 	for peer_id in peer_signaling_data.keys():
 		var peer_data = peer_signaling_data[peer_id]
 		peer_data.connection.poll()
-		
-		# Debug: Check connection state
-		var state = peer_data.connection.get_connection_state()
-		if state == WebRTCPeerConnection.STATE_CONNECTED:
-			# Only log once when connection becomes ready
-			if not peer_data.has("logged_connected"):
-				print("WebRTC peer connection established for peer: ", peer_id)
-				peer_data["logged_connected"] = true
+	
+	# Also poll the mesh multiplayer peer
+	if webrtc_multiplayer:
+		webrtc_multiplayer.poll()
 
 # Create an invite token for another peer to join the mesh
 func create_peer_invite_token():
 	# Initialize mesh network if not already started
 	if not is_mesh_connected():
-		my_peer_id = _generate_mesh_peer_id()
-		webrtc_multiplayer.create_mesh(my_peer_id)
+		my_peer_id = 1  # Server always has ID 1
+		webrtc_multiplayer.create_server()  # Use server mode for automatic peer discovery
 		multiplayer.multiplayer_peer = webrtc_multiplayer
-		# Don't emit connection_established here - wait for actual peer connections
 	
-	# Generate peer ID for the new connection
+	# Generate peer ID for the new connection (clients use IDs > 1)
 	var new_peer_id = _generate_mesh_peer_id()
 	
 	# Create peer connection for signaling
@@ -65,8 +59,9 @@ func create_peer_invite_token():
 	peer_connection.session_description_created.connect(_on_session_created.bind(new_peer_id))
 	peer_connection.ice_candidate_created.connect(_on_ice_candidate_created.bind(new_peer_id))
 	
-	# Create negotiated data channel BEFORE adding to mesh (like in working direct-WebRTC manager)
-	peer_connection.create_data_channel("gamedata", {"negotiated": true, "id": 1})
+	# Let WebRTCMultiplayerPeer create the required data channels automatically
+	# According to Godot docs: "Three channels will be created for reliable, unreliable, and ordered transport"
+	# Don't create channels manually - add_peer() will handle this
 	
 	# Add to mesh network BEFORE creating offer - this sets up data channels
 	webrtc_multiplayer.add_peer(peer_connection, new_peer_id)
@@ -76,8 +71,6 @@ func create_peer_invite_token():
 
 # Join the mesh using an invite token
 func join_mesh_with_token(invite_token: String):
-	print("Joining mesh with invite token...")
-	
 	# Decode the token
 	var token_data = _decode_token(invite_token)
 	if not token_data:
@@ -85,50 +78,34 @@ func join_mesh_with_token(invite_token: String):
 		connection_failed.emit()
 		return
 	
-	print("Token decoded, assigned peer_id: ", token_data.get("peer_id"))
-	
-	# Set up our mesh with the ID from the token (this is the ID assigned to us by the inviter)
-	my_peer_id = int(token_data.get("peer_id"))  # Convert to int
-	if not my_peer_id:
-		print("Error: No peer_id found in token")
+	# Set up our client with the ID from the token
+	my_peer_id = int(token_data.get("peer_id"))
+	if not my_peer_id or my_peer_id <= 1:  # Client IDs must be > 1
+		print("Error: Invalid peer_id in token (must be > 1 for clients)")
 		connection_failed.emit()
 		return
 	
-	print("Creating mesh with my_peer_id: ", my_peer_id)
-	webrtc_multiplayer.create_mesh(my_peer_id)
+	webrtc_multiplayer.create_client(my_peer_id)  # Use client mode for automatic peer discovery
 	multiplayer.multiplayer_peer = webrtc_multiplayer
 	
-	# Don't emit connection_established here - wait for actual peer connections
+	# Get the server's ID (always 1) - this is who we connect to
+	var server_peer_id = 1  # In client/server mode, we only connect to the server
 	
-	# Get the inviting peer's ID from token
-	var inviting_peer_id = int(token_data.get("sender_id"))  # Convert to int
-	if not inviting_peer_id or inviting_peer_id == 0:
-		print("Error: Invalid sender_id in token: ", inviting_peer_id)
-		print("This usually means the inviting peer had an invalid peer ID when creating the token")
-		connection_failed.emit()
-		return
-	
-	print("Connecting to inviting peer: ", inviting_peer_id)
-	
-
-	
-	# Create peer connection to the inviting peer
+	# Create peer connection to the server
 	var peer_connection = _create_peer_connection()
 	
-	# Store peer signaling data
-	peer_signaling_data[inviting_peer_id] = {
+	# Store peer signaling data for the server connection
+	peer_signaling_data[server_peer_id] = {
 		"connection": peer_connection,
 		"session": {"type": "", "sdp": "", "ice_candidates": []}
 	}
 	
-	peer_connection.session_description_created.connect(_on_session_created.bind(inviting_peer_id))
-	peer_connection.ice_candidate_created.connect(_on_ice_candidate_created.bind(inviting_peer_id))
+	peer_connection.session_description_created.connect(_on_session_created.bind(server_peer_id))
+	peer_connection.ice_candidate_created.connect(_on_ice_candidate_created.bind(server_peer_id))
 	
-	# Create negotiated data channel BEFORE setting remote description (like in working direct-WebRTC manager)
-	peer_connection.create_data_channel("gamedata", {"negotiated": true, "id": 1})
-	
-	# Add to mesh BEFORE setting remote description (peer must be in STATE_NEW)
-	webrtc_multiplayer.add_peer(peer_connection, inviting_peer_id)
+	# In client mode, we only add the server peer (ID 1)
+	# The MultiplayerAPI will handle discovery of other clients automatically
+	webrtc_multiplayer.add_peer(peer_connection, server_peer_id)
 	
 	# Set remote description from token
 	peer_connection.set_remote_description(token_data.type, token_data.sdp)
@@ -136,15 +113,9 @@ func join_mesh_with_token(invite_token: String):
 	# Add ICE candidates from token
 	for candidate in token_data.ice_candidates:
 		peer_connection.add_ice_candidate(candidate.media, candidate.index, candidate.name)
-	
-	# Answer will be automatically generated when set_remote_description() is called above
-	# The session_description_created signal will be emitted with type "answer"
-	print("Answer should be generated automatically now...")
 
 # Complete mesh connection with response token
 func complete_mesh_connection_with_token(response_token: String):
-	print("Completing mesh connection with response token...")
-	
 	# Decode response token
 	var token_data = _decode_token(response_token)
 	if not token_data:
@@ -152,13 +123,8 @@ func complete_mesh_connection_with_token(response_token: String):
 		connection_failed.emit()
 		return
 	
-	print("Response token decoded, type: ", token_data.get("type"))
-	
 	# Find the peer connection for this response
 	var expected_peer_id = int(token_data.get("sender_id", 0))  # The peer who sent the answer (convert to int)
-	
-	print("Looking for peer connection with ID: ", expected_peer_id)
-	print("Available peer connections: ", peer_signaling_data.keys())
 	
 	if not peer_signaling_data.has(expected_peer_id):
 		print("Error: No peer connection found for peer ID: ", expected_peer_id)
@@ -166,7 +132,6 @@ func complete_mesh_connection_with_token(response_token: String):
 		return
 	
 	var peer_connection = peer_signaling_data[expected_peer_id].connection
-	print("Found peer connection, setting remote description...")
 	
 	# Set remote description (answer) to complete connection
 	peer_connection.set_remote_description(token_data.type, token_data.sdp)
@@ -174,11 +139,6 @@ func complete_mesh_connection_with_token(response_token: String):
 	# Add ICE candidates
 	for candidate in token_data.ice_candidates:
 		peer_connection.add_ice_candidate(candidate.media, candidate.index, candidate.name)
-	
-	print("Mesh connection setup completed for peer: ", expected_peer_id)
-	
-	# Do not emit connection_established here - this is just completing the signaling
-	# The actual peer connection will trigger _on_peer_connected when ready
 	
 
 
@@ -194,21 +154,17 @@ func _create_peer_connection() -> WebRTCPeerConnection:
 
 # Called when session description is created
 func _on_session_created(type: String, sdp: String, peer_id: int):
-	print("Session created - type: ", type, " for peer: ", peer_id)
-	
 	# Find the peer connection and set local description
 	if not peer_signaling_data.has(peer_id):
 		print("Error: No peer connection found for peer ID: ", peer_id)
 		connection_failed.emit()
 		return
 	
-	print("Setting local description and storing session data...")
 	# Store session data for this specific peer
 	peer_signaling_data[peer_id].connection.set_local_description(type, sdp)
 	peer_signaling_data[peer_id].session["type"] = type
 	peer_signaling_data[peer_id].session["sdp"] = sdp
 	
-	print("Waiting for ICE candidates...")
 	# Wait for ICE candidates, then generate token
 	await get_tree().create_timer(2.0).timeout
 	_generate_token(peer_id)
@@ -237,13 +193,9 @@ func _generate_token(peer_id: int):
 	if session_data.type == "offer":
 		token_data["peer_id"] = peer_id  # Target peer should use this ID
 		token_data["sender_id"] = my_peer_id  # We are sending the offer
-		print("Creating offer token - my_peer_id: ", my_peer_id, ", target peer_id: ", peer_id)
 	else:  # answer
 		token_data["peer_id"] = peer_id  # Who we're responding to
 		token_data["sender_id"] = my_peer_id  # We are sending the answer
-		print("Creating answer token - my_peer_id: ", my_peer_id, ", responding to peer_id: ", peer_id)
-	
-
 	
 	var json_string = JSON.stringify(token_data)
 	var token = Marshalls.utf8_to_base64(json_string)
@@ -286,16 +238,11 @@ func _receive_player_data(position: Vector3, rotation: Vector3):
 
 # Signal handlers - handle remote player management directly
 func _on_peer_connected(peer_id: int):
-	print("!!! MESH PEER CONNECTED EVENT: ", peer_id, " !!!")
-	print("Total peers now: ", get_mesh_peers().size())
-	print("All connected peers: ", get_mesh_peers())
-	
 	# Create remote player directly when peer connects
+	# With server relay, all peer discovery is handled automatically by MultiplayerAPI
 	_create_remote_player(peer_id)
 
 func _on_peer_disconnected(peer_id: int):
-	print("!!! MESH PEER DISCONNECTED EVENT: ", peer_id, " !!!")
-	
 	# Clean up remote player directly when peer disconnects
 	_remove_remote_player(peer_id)
 
@@ -357,11 +304,10 @@ static func connection_state_to_string(state: int) -> String:
 func is_mesh_connected() -> bool:
 	return multiplayer.multiplayer_peer != null and webrtc_multiplayer != null and my_peer_id != 0
 
-# Helper functions for mesh peer ID management
+# Helper functions for client peer ID management
 func _generate_mesh_peer_id() -> int:
-	# Generate a random peer ID for mesh
-	var peer_id = randi() % 1000 + 1
-
+	# Generate client peer ID (must be > 1, server is always 1)
+	var peer_id = randi() % 1000 + 2  # Start from 2 to avoid server ID
 	return peer_id
 
 # Helper functions for remote player management
@@ -372,10 +318,8 @@ func _create_remote_player(peer_id: int):
 	
 	# Add to scene (assuming this manager is in the main scene)
 	get_tree().current_scene.add_child(remote_player)
-	print("Created remote player for peer: ", peer_id)
 
 func _remove_remote_player(peer_id: int):
 	if remote_players.has(peer_id):
 		remote_players[peer_id].queue_free()
 		remote_players.erase(peer_id)
-		print("Removed remote player for peer: ", peer_id)
