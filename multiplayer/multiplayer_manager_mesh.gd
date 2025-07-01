@@ -1,7 +1,11 @@
 extends Node
 
+# WebRTC multiplayer manager using client/server topology with automatic peer discovery
+# Server (ID=1) acts as relay hub, clients (ID>1) connect through server for full connectivity
+# Uses manual token-based signaling for initial WebRTC handshake
+
 # TODO: Consider cleaning up peer_connections entries after signaling is complete,
-# since they're only needed for WebRTC handshake, not ongoing mesh communication
+# since they're only needed for WebRTC handshake, not ongoing network communication
 
 # Simplified signals - only what we actually need beyond built-in ones
 signal connection_failed
@@ -31,20 +35,20 @@ func _process(_delta):
 		var peer_data = peer_signaling_data[peer_id]
 		peer_data.connection.poll()
 	
-	# Also poll the mesh multiplayer peer
+	# Also poll the WebRTC multiplayer peer
 	if webrtc_multiplayer:
 		webrtc_multiplayer.poll()
 
-# Create an invite token for another peer to join the mesh
+# Create an invite token for another peer to join the network
 func create_peer_invite_token():
-	# Initialize mesh network if not already started
-	if not is_mesh_connected():
+	# Initialize network if not already started
+	if not is_network_connected():
 		my_peer_id = 1  # Server always has ID 1
 		webrtc_multiplayer.create_server()  # Use server mode for automatic peer discovery
 		multiplayer.multiplayer_peer = webrtc_multiplayer
 	
 	# Generate peer ID for the new connection (clients use IDs > 1)
-	var new_peer_id = _generate_mesh_peer_id()
+	var new_peer_id = _generate_peer_id()
 	
 	# Create peer connection for signaling
 	var peer_connection = _create_peer_connection()
@@ -63,18 +67,18 @@ func create_peer_invite_token():
 	# According to Godot docs: "Three channels will be created for reliable, unreliable, and ordered transport"
 	# Don't create channels manually - add_peer() will handle this
 	
-	# Add to mesh network BEFORE creating offer - this sets up data channels
+	# Add to network BEFORE creating offer - this sets up data channels
 	webrtc_multiplayer.add_peer(peer_connection, new_peer_id)
 	
 	# Create offer
 	peer_connection.create_offer()
 
-# Join the mesh using an invite token
-func join_mesh_with_token(invite_token: String):
+# Join the network using an invite token
+func join_network_with_token(invite_token: String):
 	# Decode the token
 	var token_data = _decode_token(invite_token)
 	if not token_data:
-		print("Error: Invalid mesh invite token")
+		print("Error: Invalid network invite token")
 		connection_failed.emit()
 		return
 	
@@ -114,12 +118,12 @@ func join_mesh_with_token(invite_token: String):
 	for candidate in token_data.ice_candidates:
 		peer_connection.add_ice_candidate(candidate.media, candidate.index, candidate.name)
 
-# Complete mesh connection with response token
-func complete_mesh_connection_with_token(response_token: String):
+# Complete network connection with response token
+func complete_network_connection_with_token(response_token: String):
 	# Decode response token
 	var token_data = _decode_token(response_token)
 	if not token_data:
-		print("Error: Invalid mesh response token")
+		print("Error: Invalid network response token")
 		connection_failed.emit()
 		return
 	
@@ -217,7 +221,7 @@ func _decode_token(token: String) -> Dictionary:
 	
 	return data
 
-# Send player data to all mesh peers using RPC
+# Send player data to all network peers using RPC
 func send_player_data(position: Vector3, rotation: Vector3):
 	if multiplayer.multiplayer_peer:
 		_receive_player_data.rpc(position, rotation)
@@ -246,8 +250,8 @@ func _on_peer_disconnected(peer_id: int):
 	# Clean up remote player directly when peer disconnects
 	_remove_remote_player(peer_id)
 
-# Clean up mesh network
-func stop_mesh():
+# Clean up network
+func stop_network():
 	if multiplayer.multiplayer_peer:
 		multiplayer.multiplayer_peer = null
 	if webrtc_multiplayer:
@@ -263,8 +267,8 @@ func stop_mesh():
 	for peer_id in remote_players.keys():
 		_remove_remote_player(peer_id)
 
-# Get list of connected mesh peers
-func get_mesh_peers() -> Array:
+# Get list of connected network peers
+func get_connected_peers() -> Array:
 	if not multiplayer.multiplayer_peer:
 		return []
 	return multiplayer.get_peers()
@@ -300,12 +304,12 @@ static func connection_state_to_string(state: int) -> String:
 		_:
 			return "❓ Unknown"
 
-# Check if mesh is connected
-func is_mesh_connected() -> bool:
+# Check if network is connected
+func is_network_connected() -> bool:
 	return multiplayer.multiplayer_peer != null and webrtc_multiplayer != null and my_peer_id != 0
 
 # Helper functions for client peer ID management
-func _generate_mesh_peer_id() -> int:
+func _generate_peer_id() -> int:
 	# Generate client peer ID (must be > 1, server is always 1)
 	var peer_id = randi() % 1000 + 2  # Start from 2 to avoid server ID
 	return peer_id

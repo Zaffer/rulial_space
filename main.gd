@@ -75,7 +75,7 @@ func _process(_delta):
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	
 	# Send player position to remote peer if connected (only when mouse is captured)
-	if multiplayer_manager.is_mesh_connected() and camera and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
+	if multiplayer_manager.is_network_connected() and camera and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 		multiplayer_manager.send_player_data(camera.global_position, camera.global_rotation)
 
 func _input(event):

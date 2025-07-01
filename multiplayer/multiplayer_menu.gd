@@ -49,6 +49,9 @@ func setup_multiplayer_manager(manager: Node):
 	# Connect to built-in multiplayer signals instead of custom ones
 	multiplayer.peer_connected.connect(_on_peer_joined)
 	multiplayer.peer_disconnected.connect(_on_peer_left)
+	
+	# Initialize connection status
+	_update_connection_status()
 
 func toggle_menu():
 	is_menu_open = !is_menu_open
@@ -56,6 +59,7 @@ func toggle_menu():
 	
 	if is_menu_open:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		_update_connection_status()
 		_update_connections_display()
 	else:
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -74,7 +78,7 @@ func _on_paste_invite_pressed():
 			create_invite_btn.disabled = true
 			paste_invite_btn.text = "⏳ Generating Response..."
 			paste_response_btn.disabled = true
-			multiplayer_manager.join_mesh_with_token(clipboard_text)
+			multiplayer_manager.join_network_with_token(clipboard_text)
 
 func _on_create_invite_pressed():
 	# If button shows "Copy Invite", copy it
@@ -91,7 +95,7 @@ func _on_create_invite_pressed():
 	paste_invite_btn.disabled = true
 	create_invite_btn.text = "⏳ Generating Invite..."
 	
-	# Manager will start mesh automatically if needed
+	# Manager will start network automatically if needed
 	multiplayer_manager.create_peer_invite_token()
 
 func _on_copy_response_pressed():
@@ -108,7 +112,7 @@ func _on_paste_response_pressed():
 		copy_response_btn.disabled = true
 		paste_response_btn.disabled = true
 		paste_response_btn.text = "⏳ Connecting..."
-		multiplayer_manager.complete_mesh_connection_with_token(clipboard_text)
+		multiplayer_manager.complete_network_connection_with_token(clipboard_text)
 	else:
 		paste_response_btn.text = "❌ Invalid Token"
 		await get_tree().create_timer(1.0).timeout
@@ -119,13 +123,13 @@ func _on_clear_tokens_pressed():
 	response_token_field.text = ""
 	# Reset all buttons to default state
 	create_invite_btn.text = "Create Invite 📤"
-	create_invite_btn.disabled = false
 	paste_invite_btn.text = "Paste Invite 📥"
-	paste_invite_btn.disabled = false
 	copy_response_btn.text = "Copy Response 📤"
 	copy_response_btn.disabled = true
 	paste_response_btn.text = "Paste Response 📥"
-	paste_response_btn.disabled = false
+	
+	# Update button states based on current connection status
+	_update_connection_status()
 
 # === MULTIPLAYER SIGNAL HANDLERS ===
 
@@ -155,15 +159,14 @@ func _on_connection_failed():
 
 func _on_peer_joined(peer_id: int):
 	connected_peers[peer_id] = {"id": peer_id, "status": "🟢 Connected"}
-	# Update connection status to show we actually have peers connected
-	connection_status_label.text = "🟢 Connected"
+	# Update connection status based on whether we're hosting or connected
+	_update_connection_status()
 	_update_connections_display()
 
 func _on_peer_left(peer_id: int):
 	connected_peers.erase(peer_id)
-	# If no more peers, update status
-	if connected_peers.is_empty():
-		connection_status_label.text = "🔴 Disconnected"
+	# Update connection status and UI
+	_update_connection_status()
 	_update_connections_display()
 
 func _is_valid_invite_token(token: String) -> bool:
@@ -202,7 +205,11 @@ func _create_connection_entry(peer_data: Dictionary):
 	
 	# Peer info label
 	var info_label = Label.new()
-	info_label.text = "Peer " + str(peer_data.id)
+	var peer_id = peer_data.id
+	if peer_id == 1:
+		info_label.text = "Server (ID: " + str(peer_id) + ")"
+	else:
+		info_label.text = "Client (ID: " + str(peer_id) + ")"
 	info_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	entry.add_child(info_label)
 	
@@ -213,3 +220,58 @@ func _create_connection_entry(peer_data: Dictionary):
 	entry.add_child(status_label)
 	
 	connections_list.add_child(entry)
+
+# Update connection status and button states based on hosting/client mode
+func _update_connection_status():
+	if not multiplayer_manager or not multiplayer_manager.is_network_connected():
+		connection_status_label.text = "🔴 Disconnected"
+		_enable_all_buttons()
+		return
+	
+	# Check if we're hosting (server with ID 1) or connected as client
+	var my_id = multiplayer.get_unique_id()
+	var is_hosting = (my_id == 1)
+	
+	if connected_peers.is_empty():
+		if is_hosting:
+			connection_status_label.text = "🟡 Hosting (No Peers)"
+		else:
+			connection_status_label.text = "🟡 Connected (No Other Peers)"
+	else:
+		if is_hosting:
+			connection_status_label.text = "🟢 Hosting (" + str(connected_peers.size()) + " peers)"
+		else:
+			connection_status_label.text = "🟢 Connected (" + str(connected_peers.size()) + " peers)"
+	
+	# Enable/disable buttons based on hosting status
+	if is_hosting:
+		_enable_all_buttons()
+	else:
+		_disable_invite_buttons()
+
+func _enable_all_buttons():
+	create_invite_btn.disabled = false
+	paste_invite_btn.disabled = false
+	paste_response_btn.disabled = false
+	
+	# Restore button text if they were set to "Host Only"
+	if create_invite_btn.text == "🚫 Host Only":
+		create_invite_btn.text = "Create Invite 📤"
+	if paste_invite_btn.text == "🚫 Host Only":
+		paste_invite_btn.text = "Paste Invite 📥"
+	if paste_response_btn.text == "🚫 Host Only":
+		paste_response_btn.text = "Paste Response 📥"
+
+func _disable_invite_buttons():
+	# Clients cannot create invites or accept new connections
+	create_invite_btn.disabled = true
+	paste_invite_btn.disabled = true
+	paste_response_btn.disabled = true
+	
+	# Update button text to show why they're disabled
+	if create_invite_btn.text == "Create Invite 📤":
+		create_invite_btn.text = "🚫 Host Only"
+	if paste_invite_btn.text == "Paste Invite 📥":
+		paste_invite_btn.text = "🚫 Host Only"
+	if paste_response_btn.text == "Paste Response 📥":
+		paste_response_btn.text = "🚫 Host Only"
