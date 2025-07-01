@@ -167,9 +167,9 @@ func shoot_projectile():
 	var shoot_direction = -transform.basis.z  # Forward direction
 	projectile.call("launch", shoot_direction)
 
-func _notification(what):
+func _notification(_what):
 	# DISABLED - Let main.gd handle focus and mouse capture
-	# match what:
+	# match _what:
 	# 	NOTIFICATION_WM_WINDOW_FOCUS_IN:
 	# 		# Window gained focus - unpause and capture mouse
 	# 		get_tree().paused = false

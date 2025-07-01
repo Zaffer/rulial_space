@@ -44,7 +44,7 @@ func _process(_delta):
 func _integrate_forces(state: PhysicsDirectBodyState3D):
 	apply_forces(state.get_step())
 
-func apply_forces(delta: float):
+func apply_forces(_delta: float):
 	# Apply external attraction force (from laser)
 	if external_attraction_force.length() > 0:
 		apply_central_force(external_attraction_force * external_attraction_strength)

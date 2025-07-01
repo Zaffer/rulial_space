@@ -15,7 +15,7 @@ func _update_edge():
 		var start_pos = start_node.global_transform.origin
 		var end_pos = end_node.global_transform.origin
 		var direction = end_pos - start_pos
-		var distance = direction.length()
+		var _distance = direction.length()  # Used for potential future calculations
 
 		# Adjust positions to connect node surfaces rather than centers
 		direction = direction.normalized()

@@ -22,6 +22,6 @@ func _customize_appearance():
 		material.emission = Color.BLUE * 0.3
 		spaceship_instance.set_surface_override_material(0, material)
 
-func update_position(position: Vector3, rotation: Vector3):
-	global_position = position
-	global_rotation = rotation
+func update_position(new_position: Vector3, new_rotation: Vector3):
+	global_position = new_position
+	global_rotation = new_rotation
