@@ -123,6 +123,8 @@ func _create_multiplayer_menu():
 	multiplayer_menu = menu_scene.instantiate()
 	canvas_layer.add_child(multiplayer_menu)
 	
+
+	
 	# Setup connections
 	multiplayer_menu.setup_multiplayer_manager(multiplayer_manager)
 

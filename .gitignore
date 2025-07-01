@@ -1,4 +1,7 @@
 # Godot 4+ specific ignores
 .godot/
+*.tmp
+
+# distribution and extensions
 /dist
 /webrtc

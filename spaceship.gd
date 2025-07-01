@@ -145,7 +145,7 @@ func create_laser_beam():
 	# Create a simple purple beam extending forward from spaceship
 	var beam = MeshInstance3D.new()
 	var box = BoxMesh.new()
-	box.size = Vector3(0.1, 0.1, 10.0)  # 10 units long, visible beam
+	box.size = Vector3(0.1, 0.1, 100.0)  # 10 units long, visible beam
 	beam.mesh = box
 	
 	# Purple material
