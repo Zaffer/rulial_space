@@ -6,6 +6,7 @@ extends Camera3D
 @export var fly_speed := 12.0
 @export var boost_multiplier := 5.0
 @export var shoot_cooldown := 0.2
+@export var laser_range := 50.0  # Should match visual laser beam length
 
 # Internal state
 var spaceship: CharacterBody3D
@@ -24,7 +25,7 @@ func _setup_spaceship():
 	
 	# Add visual mesh
 	var spaceship_mesh = MeshInstance3D.new()
-	var spaceship_script = load("res://spaceship.gd")
+	var spaceship_script = load("res://player/spaceship.gd")
 	spaceship_mesh.set_script(spaceship_script)
 	spaceship.add_child(spaceship_mesh)
 	
@@ -174,7 +175,7 @@ func _update_spaceship_position():
 
 func shoot_projectile():
 	var projectile = RigidBody3D.new()
-	var projectile_script = load("res://projectile.gd")
+	var projectile_script = load("res://player/projectile.gd")
 	projectile.set_script(projectile_script)
 	
 	get_tree().current_scene.add_child(projectile)
@@ -197,7 +198,7 @@ func use_attraction_laser():
 	var space_state = get_world_3d().direct_space_state
 	var beam_start = laser_beam.global_position
 	var beam_direction = -laser_beam.global_transform.basis.z
-	var beam_end = beam_start + beam_direction * 10.0
+	var beam_end = beam_start + beam_direction * laser_range  # Use laser_range variable
 	
 	var query = PhysicsRayQueryParameters3D.create(beam_start, beam_end)
 	query.collision_mask = 1

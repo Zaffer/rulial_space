@@ -6,7 +6,7 @@ var spaceship_instance: MeshInstance3D
 func _ready():
 	# Create a visual spaceship for the remote player
 	spaceship_instance = MeshInstance3D.new()
-	var spaceship_script = preload("res://spaceship.gd")
+	var spaceship_script = preload("res://player/spaceship.gd")
 	spaceship_instance.set_script(spaceship_script)
 	add_child(spaceship_instance)
 	

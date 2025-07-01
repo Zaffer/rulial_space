@@ -145,7 +145,7 @@ func create_laser_beam():
 	# Create a simple purple beam extending forward from spaceship
 	var beam = MeshInstance3D.new()
 	var box = BoxMesh.new()
-	box.size = Vector3(0.1, 0.1, 100.0)  # 10 units long, visible beam
+	box.size = Vector3(0.1, 0.1, 50.0)  # 50 units long, visible beam
 	beam.mesh = box
 	
 	# Purple material
@@ -156,8 +156,9 @@ func create_laser_beam():
 	material.flags_unshaded = true
 	beam.set_surface_override_material(0, material)
 	
-	# Position it extending forward TOWARDS the camera (negative Z)
-	beam.position = Vector3(0, 0, -5.0)  # 5 units FORWARD towards camera
+	# Position it starting from gun barrel and extending forward (positive Z)
+	# Gun barrel is at (-0.8, 0, 0.3), laser should extend from there forward
+	beam.position = Vector3(-0.8, 0, -24.7)  # Start at gun barrel + half laser length forward
 	add_child(beam)
 	
 	# Store reference
