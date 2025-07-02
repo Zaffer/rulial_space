@@ -12,19 +12,15 @@ var boost_multiplier := 5.0
 var accumulated_look_delta := Vector2.ZERO
 var current_movement := Vector3.ZERO
 var current_boost_modifier := 1.0
-var should_shoot_once := false
-var should_auto_fire := false
-var should_laser := false
+var is_shooting := false
+var is_laser_active := false
 
 # Reference to camera for coordinate transforms
 var camera: Camera3D
 
 # Signals for actions
-signal shoot_once_requested
-signal auto_fire_started
-signal auto_fire_stopped  
-signal laser_started
-signal laser_stopped
+signal shoot  # Emitted continuously while button held
+signal laser  # Emitted continuously while button held
 
 func initialize(camera_ref: Camera3D) -> void:
 	camera = camera_ref
@@ -41,13 +37,9 @@ func handle_input_event(event: InputEvent) -> void:
 func _handle_mouse_buttons(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
-			if event.pressed:
-				shoot_once_requested.emit()
+			is_shooting = event.pressed
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			if event.pressed:
-				laser_started.emit()
-			else:
-				laser_stopped.emit()
+			is_laser_active = event.pressed
 
 func _handle_mouse_look(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
@@ -65,17 +57,18 @@ func _handle_fullscreen_toggle(event: InputEvent) -> void:
 func process_input(_delta: float) -> void:
 	_update_movement_input()
 	_update_boost_input()
-	_update_action_input()
+	_emit_continuous_actions()
+
+func _emit_continuous_actions() -> void:
+	# Emit continuous action signals while buttons are held
+	if is_shooting:
+		shoot.emit()
+	if is_laser_active:
+		laser.emit()
 
 func _update_action_input() -> void:
-	# Check for continuous mouse button states
-	var laser_active = Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
-	if laser_active != should_laser:
-		should_laser = laser_active
-		if should_laser:
-			laser_started.emit()
-		else:
-			laser_stopped.emit()
+	# No longer needed - handled by mouse button events and continuous signals
+	pass
 
 func _update_movement_input() -> void:
 	# Calculate keyboard movement in camera's local coordinate system

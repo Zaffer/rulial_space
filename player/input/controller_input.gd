@@ -12,18 +12,15 @@ var boost_multiplier := 5.0
 var accumulated_look_delta := Vector2.ZERO
 var current_movement := Vector3.ZERO
 var current_boost_modifier := 1.0
-var last_shoot_state := false
-var last_laser_state := false
+var is_shooting := false
+var is_laser_active := false
 
 # Reference to camera for coordinate transforms
 var camera: Camera3D
 
 # Signals for actions
-signal shoot_once_requested
-signal auto_fire_started
-signal auto_fire_stopped  
-signal laser_started
-signal laser_stopped
+signal shoot  # Emitted continuously while button held
+signal laser  # Emitted continuously while button held
 
 func initialize(camera_ref: Camera3D) -> void:
 	camera = camera_ref
@@ -40,7 +37,20 @@ func process_input(delta: float) -> void:
 	_update_look_input(delta)
 	_update_movement_input(delta)
 	_update_boost_input()
-	_update_action_input()
+	_update_action_states()
+	_emit_continuous_actions()
+
+func _update_action_states() -> void:
+	# Update action states based on current button presses
+	is_shooting = Input.is_joy_button_pressed(0, JOY_BUTTON_A) or Input.is_joy_button_pressed(0, JOY_BUTTON_RIGHT_SHOULDER)
+	is_laser_active = Input.is_joy_button_pressed(0, JOY_BUTTON_B)
+
+func _emit_continuous_actions() -> void:
+	# Emit continuous action signals while buttons are held
+	if is_shooting:
+		shoot.emit()
+	if is_laser_active:
+		laser.emit()
 
 func _update_look_input(delta: float) -> void:
 	# Controller look with right stick
@@ -86,24 +96,6 @@ func _update_movement_input(_delta: float) -> void:
 func _update_boost_input() -> void:
 	# Check for boost input (Left Shoulder button)
 	current_boost_modifier = boost_multiplier if Input.is_joy_button_pressed(0, JOY_BUTTON_LEFT_SHOULDER) else 1.0
-
-func _update_action_input() -> void:
-	# Handle controller button actions with edge detection
-	
-	# A button or Right Shoulder - Shooting (emit only on press, not hold)
-	var shoot_pressed = Input.is_joy_button_pressed(0, JOY_BUTTON_A) or Input.is_joy_button_pressed(0, JOY_BUTTON_RIGHT_SHOULDER)
-	if shoot_pressed and not last_shoot_state:
-		shoot_once_requested.emit()
-	last_shoot_state = shoot_pressed
-	
-	# B button - Laser (emit on state change)
-	var laser_active = Input.is_joy_button_pressed(0, JOY_BUTTON_B)
-	if laser_active != last_laser_state:
-		last_laser_state = laser_active
-		if laser_active:
-			laser_started.emit()
-		else:
-			laser_stopped.emit()
 
 # Interface implementation
 func get_movement_vector() -> Vector3:

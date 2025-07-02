@@ -36,12 +36,12 @@ var fly_speed := 12.0
 var boost_multiplier := 5.0
 
 # Signals for actions
-signal shoot_once_requested
-signal auto_fire_started
-signal auto_fire_stopped  
-signal laser_started
-signal laser_stopped
+signal shoot  # Emitted continuously while shooting gesture is active
+signal laser  # Emitted continuously while laser gesture is active  
 signal flight_mode_changed(mode: String)
+
+# Note: Mobile input currently uses tap patterns for actions
+# For now, emitting single shots on taps - can be enhanced later for continuous
 
 func initialize(camera_ref: Camera3D) -> void:
 	camera = camera_ref
@@ -109,6 +109,16 @@ func process_input(_delta: float) -> void:
 	if touch_count >= 2:
 		_handle_multi_finger_gestures(_delta)
 	
+	# Emit continuous signals based on current weapon mode
+	_emit_continuous_actions()
+
+func _emit_continuous_actions() -> void:
+	# Emit continuous signals while gestures are active
+	if mobile_weapon_mode == "AUTO_FIRE":
+		shoot.emit()
+	elif mobile_weapon_mode == "LASER_BEAM":
+		laser.emit()
+	
 	# Update boost modifier based on flight mode
 	current_boost_modifier = boost_multiplier if mobile_flight_mode == "BOOST" else 1.0
 
@@ -138,7 +148,7 @@ func _check_tap_sequence_timeout() -> void:
 	if mobile_tap_count > 0 and current_time - mobile_tap_count_timer > mobile_tap_sequence_timeout:
 		if mobile_tap_count == 1 and mobile_weapon_mode == "NONE":
 			# Single tap that timed out - shoot once
-			shoot_once_requested.emit()
+			shoot.emit()
 		mobile_tap_count = 0
 
 func _process_tap_sequences(finger_id: int) -> void:
@@ -155,27 +165,27 @@ func _process_tap_sequences(finger_id: int) -> void:
 	if mobile_tap_count == 1:
 		# Single tap - shoot once
 		if mobile_weapon_mode == "NONE":
-			shoot_once_requested.emit()
+			shoot.emit()
 	elif mobile_tap_count == 2:
 		if finger_still_down:
 			# Double tap + hold - enter auto-fire
 			mobile_weapon_mode = "AUTO_FIRE"
 			mobile_weapon_finger = finger_id
-			auto_fire_started.emit()
+			# Note: Continuous shooting will be handled by checking weapon mode
 		else:
 			# Just double tap without hold - shoot once
 			if mobile_weapon_mode == "NONE":
-				shoot_once_requested.emit()
+				shoot.emit()
 	elif mobile_tap_count >= 3:
 		if finger_still_down:
 			# Triple tap + hold - enter laser mode
 			mobile_weapon_mode = "LASER_BEAM"
 			mobile_weapon_finger = finger_id
-			laser_started.emit()
+			# Note: Continuous laser will be handled by checking weapon mode
 		else:
 			# Just triple tap without hold - shoot once
 			if mobile_weapon_mode == "NONE":
-				shoot_once_requested.emit()
+				shoot.emit()
 	
 	# Reset tap count
 	mobile_tap_count = 0
@@ -216,10 +226,7 @@ func _handle_mobile_tap(finger_id: int, _tap_position: Vector2) -> void:
 func _handle_mobile_release(finger_id: int) -> void:
 	# If releasing weapon finger, stop weapon mode
 	if finger_id == mobile_weapon_finger:
-		if mobile_weapon_mode == "AUTO_FIRE":
-			auto_fire_stopped.emit()
-		elif mobile_weapon_mode == "LASER_BEAM":
-			laser_stopped.emit()
+		# Note: Continuous signals will stop automatically when finger is released
 		mobile_weapon_mode = "NONE"
 		mobile_weapon_finger = -1
 	

@@ -29,7 +29,7 @@ extends Camera3D
 var spaceship: CharacterBody3D
 var last_shot_time := 0
 var weapon_light: OmniLight3D
-var auto_fire_active := false
+var is_laser_active := false
 
 func _ready():
 	_setup_spaceship()
@@ -83,7 +83,10 @@ func _handle_fullscreen_toggle(event):
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 
 func _process(delta):
-	# Use InputManager for all input
+	# Reset laser state each frame - will be set to true by signal if active this frame
+	is_laser_active = false
+	
+	# Use InputManager for all input (this will emit signals that set is_laser_active)
 	if input_manager:
 		input_manager.process_input(delta)
 		
@@ -96,10 +99,8 @@ func _process(delta):
 		_apply_movement_from_input_manager(movement_vector, boost_modifier, delta)
 		_apply_look_from_input_manager(look_delta)
 	
-	# Handle auto-fire
-	if auto_fire_active and Time.get_ticks_msec() - last_shot_time > shoot_cooldown * 1000:
-		shoot_projectile()
-		last_shot_time = Time.get_ticks_msec()
+	# Handle laser (will be active if signal was emitted this frame)
+	_handle_laser(is_laser_active)
 	
 	_update_spaceship_position()
 
@@ -179,30 +180,18 @@ func _initialize_input_manager():
 	input_manager.initialize(self)
 	
 	# Connect to input manager signals
-	input_manager.shoot_once.connect(_on_shoot_once)
-	input_manager.auto_fire_started.connect(_on_auto_fire_started)
-	input_manager.auto_fire_stopped.connect(_on_auto_fire_stopped)
-	input_manager.laser_started.connect(_on_laser_started)
-	input_manager.laser_stopped.connect(_on_laser_stopped)
+	input_manager.shoot.connect(_on_shoot)
+	input_manager.laser.connect(_on_laser)
 	input_manager.flight_mode_changed.connect(_on_flight_mode_changed)
 
 # Input action handlers
-func _on_shoot_once():
+func _on_shoot():
 	if Time.get_ticks_msec() - last_shot_time > shoot_cooldown * 1000:
 		shoot_projectile()
 		last_shot_time = Time.get_ticks_msec()
 
-func _on_auto_fire_started():
-	auto_fire_active = true
-
-func _on_auto_fire_stopped():
-	auto_fire_active = false
-
-func _on_laser_started():
-	_handle_laser(true)
-
-func _on_laser_stopped():
-	_handle_laser(false)
+func _on_laser():
+	is_laser_active = true
 
 func _on_flight_mode_changed(_mode: String):
 	# Handle flight mode changes (if needed)

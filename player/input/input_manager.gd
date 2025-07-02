@@ -4,13 +4,10 @@ extends RefCounted
 # Coordinates between different input handlers and emits unified signals
 # Manages priority between input types (mobile overrides others when active)
 
-# Signal definitions for discrete events
-signal shoot_once
-signal auto_fire_started
-signal auto_fire_stopped
-signal laser_started
-signal laser_stopped
-signal flight_mode_changed(mode: String)  # "NORMAL" or "BOOST"
+# Signal definitions for continuous actions
+signal shoot  # Emitted continuously while shoot button/gesture is held
+signal laser  # Emitted continuously while laser button/gesture is held
+signal flight_mode_changed(mode: String)  # "NORMAL" or "BOOST" (for mobile only)
 
 # Input handlers (will be properly typed once handler files exist)
 var keyboard_mouse_handler
@@ -38,38 +35,24 @@ func initialize(camera: Camera3D) -> void:
 func _connect_handler_signals() -> void:
 	# Connect signals from all handlers to forward them
 	if keyboard_mouse_handler:
-		keyboard_mouse_handler.shoot_once_requested.connect(_on_shoot_once)
-		keyboard_mouse_handler.laser_started.connect(_on_laser_started)
-		keyboard_mouse_handler.laser_stopped.connect(_on_laser_stopped)
+		keyboard_mouse_handler.shoot.connect(_on_shoot)
+		keyboard_mouse_handler.laser.connect(_on_laser)
 	
 	if controller_handler:
-		controller_handler.shoot_once_requested.connect(_on_shoot_once)
-		controller_handler.laser_started.connect(_on_laser_started)
-		controller_handler.laser_stopped.connect(_on_laser_stopped)
+		controller_handler.shoot.connect(_on_shoot)
+		controller_handler.laser.connect(_on_laser)
 	
 	if mobile_handler:
-		mobile_handler.shoot_once_requested.connect(_on_shoot_once)
-		mobile_handler.auto_fire_started.connect(_on_auto_fire_started)
-		mobile_handler.auto_fire_stopped.connect(_on_auto_fire_stopped)
-		mobile_handler.laser_started.connect(_on_laser_started)
-		mobile_handler.laser_stopped.connect(_on_laser_stopped)
+		mobile_handler.shoot.connect(_on_shoot)
+		mobile_handler.laser.connect(_on_laser)
 		mobile_handler.flight_mode_changed.connect(_on_flight_mode_changed)
 
-# Signal forwarders
-func _on_shoot_once() -> void:
-	shoot_once.emit()
+# Signal forwarders  
+func _on_shoot() -> void:
+	shoot.emit()
 
-func _on_auto_fire_started() -> void:
-	auto_fire_started.emit()
-
-func _on_auto_fire_stopped() -> void:
-	auto_fire_stopped.emit()
-
-func _on_laser_started() -> void:
-	laser_started.emit()
-
-func _on_laser_stopped() -> void:
-	laser_stopped.emit()
+func _on_laser() -> void:
+	laser.emit()
 
 func _on_flight_mode_changed(mode: String) -> void:
 	current_flight_mode = mode
