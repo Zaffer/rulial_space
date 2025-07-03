@@ -14,6 +14,7 @@ var current_movement := Vector3.ZERO
 var current_boost_modifier := 1.0
 var is_shooting := false
 var is_laser_active := false
+var controller_id := -1  # Cached controller ID
 
 # Reference to camera for coordinate transforms
 var camera: Camera3D
@@ -29,11 +30,19 @@ func initialize(camera_ref: Camera3D) -> void:
 	fly_speed = camera.get("fly_speed") 
 	boost_multiplier = camera.get("boost_multiplier")
 
+func _get_controller_id() -> int:
+	# Get the first available controller, or -1 if none
+	var connected_joypads = Input.get_connected_joypads()
+	return connected_joypads[0] if connected_joypads.size() > 0 else -1
+
 func handle_input_event(_event: InputEvent) -> void:
 	# Controller input is polled, not event-based
 	pass
 
 func process_input(delta: float) -> void:
+	# Update controller ID once per frame
+	controller_id = _get_controller_id()
+	
 	_update_look_input(delta)
 	_update_movement_input(delta)
 	_update_boost_input()
@@ -42,8 +51,8 @@ func process_input(delta: float) -> void:
 
 func _update_action_states() -> void:
 	# Update action states based on current button presses
-	is_shooting = Input.is_joy_button_pressed(0, JOY_BUTTON_A) or Input.is_joy_button_pressed(0, JOY_BUTTON_RIGHT_SHOULDER)
-	is_laser_active = Input.is_joy_button_pressed(0, JOY_BUTTON_B)
+	is_shooting = Input.is_joy_button_pressed(controller_id, JOY_BUTTON_A) or Input.is_joy_button_pressed(controller_id, JOY_BUTTON_RIGHT_SHOULDER)
+	is_laser_active = Input.is_joy_button_pressed(controller_id, JOY_BUTTON_B)
 
 func _emit_continuous_actions() -> void:
 	# Emit continuous action signals while buttons are held
@@ -55,8 +64,8 @@ func _emit_continuous_actions() -> void:
 func _update_look_input(delta: float) -> void:
 	# Controller look with right stick
 	var look_vector = Vector2.ZERO
-	look_vector.x = Input.get_joy_axis(0, JOY_AXIS_RIGHT_X)
-	look_vector.y = Input.get_joy_axis(0, JOY_AXIS_RIGHT_Y)
+	look_vector.x = Input.get_joy_axis(controller_id, JOY_AXIS_RIGHT_X)
+	look_vector.y = Input.get_joy_axis(controller_id, JOY_AXIS_RIGHT_Y)
 	
 	if look_vector.length() > 0.1:
 		# Apply sensitivity and delta time, accumulate for this frame
@@ -68,34 +77,28 @@ func _update_movement_input(_delta: float) -> void:
 	
 	# Controller movement (left stick)
 	var move_stick = Vector2.ZERO
-	move_stick.x = Input.get_joy_axis(0, JOY_AXIS_LEFT_X)
-	move_stick.y = Input.get_joy_axis(0, JOY_AXIS_LEFT_Y)
+	move_stick.x = Input.get_joy_axis(controller_id, JOY_AXIS_LEFT_X)
+	move_stick.y = Input.get_joy_axis(controller_id, JOY_AXIS_LEFT_Y)
 	
 	if move_stick.length() > 0.1:
-		var stick_direction = move_stick.normalized()
-		var movement_multiplier = move_stick.length()  # Analog sensitivity
-		
 		# Forward/backward from Y axis (negative Y = forward)
-		input_vector += Vector3.BACK * stick_direction.y
+		input_vector += Vector3.BACK * move_stick.y
 		# Left/right from X axis  
-		input_vector += Vector3.RIGHT * stick_direction.x
-		
-		# Apply analog sensitivity
-		input_vector *= movement_multiplier
+		input_vector += Vector3.RIGHT * move_stick.x
 	
 	# Controller vertical movement (triggers)
-	if Input.get_joy_axis(0, JOY_AXIS_TRIGGER_RIGHT) > 0.1:  # RT - Up
-		var trigger_amount = Input.get_joy_axis(0, JOY_AXIS_TRIGGER_RIGHT)
+	if Input.get_joy_axis(controller_id, JOY_AXIS_TRIGGER_RIGHT) > 0.1:  # RT - Up
+		var trigger_amount = Input.get_joy_axis(controller_id, JOY_AXIS_TRIGGER_RIGHT)
 		input_vector += Vector3.UP * trigger_amount
-	if Input.get_joy_axis(0, JOY_AXIS_TRIGGER_LEFT) > 0.1:   # LT - Down
-		var trigger_amount = Input.get_joy_axis(0, JOY_AXIS_TRIGGER_LEFT)
-		input_vector += -Vector3.UP * trigger_amount
+	if Input.get_joy_axis(controller_id, JOY_AXIS_TRIGGER_LEFT) > 0.1:   # LT - Down
+		var trigger_amount = Input.get_joy_axis(controller_id, JOY_AXIS_TRIGGER_LEFT)
+		input_vector += Vector3.DOWN * trigger_amount
 	
-	current_movement = input_vector.normalized() if input_vector.length() > 0 else Vector3.ZERO
+	current_movement = input_vector
 
 func _update_boost_input() -> void:
 	# Check for boost input (Left Shoulder button)
-	current_boost_modifier = boost_multiplier if Input.is_joy_button_pressed(0, JOY_BUTTON_LEFT_SHOULDER) else 1.0
+	current_boost_modifier = boost_multiplier if Input.is_joy_button_pressed(controller_id, JOY_BUTTON_LEFT_SHOULDER) else 1.0
 
 # Interface implementation
 func get_movement_vector() -> Vector3:
