@@ -13,6 +13,7 @@ signal flight_mode_changed(mode: String)  # "NORMAL" or "BOOST" (for mobile only
 var keyboard_mouse_handler
 var controller_handler  
 var mobile_handler
+var gyroscope_handler
 
 # State tracking
 var current_flight_mode := "NORMAL"
@@ -23,11 +24,13 @@ func initialize(camera: Camera3D) -> void:
 	keyboard_mouse_handler = preload("res://player/input/keyboard_mouse_input.gd").new()
 	controller_handler = preload("res://player/input/controller_input.gd").new()
 	mobile_handler = preload("res://player/input/mobile_input.gd").new()
+	gyroscope_handler = preload("res://player/input/gyroscope_input.gd").new()
 	
 	# Initialize handlers
 	keyboard_mouse_handler.initialize(camera)
 	controller_handler.initialize(camera)
 	mobile_handler.initialize(camera)
+	gyroscope_handler.initialize(camera)
 	
 	# Connect signals for priority handling
 	_connect_handler_signals()
@@ -66,6 +69,8 @@ func process_input(delta: float) -> void:
 		controller_handler.process_input(delta)
 	if mobile_handler:
 		mobile_handler.process_input(delta)
+	if gyroscope_handler:
+		gyroscope_handler.process_input(delta)
 	
 	# Detect if mobile is active (has touches)
 	_update_mobile_priority()
@@ -101,17 +106,30 @@ func get_movement_vector() -> Vector3:
 	return movement
 
 func get_look_delta() -> Vector2:
-	if is_mobile_active and mobile_handler:
-		return mobile_handler.get_look_delta()
-	
-	# Combine mouse and controller look
 	var look = Vector2.ZERO
-	if keyboard_mouse_handler:
-		look = keyboard_mouse_handler.get_look_delta()
-	if controller_handler:
-		look += controller_handler.get_look_delta()  # Additive for smooth blending
+	
+	if is_mobile_active and mobile_handler:
+		# When mobile is active, use mobile touch gestures as base
+		look = mobile_handler.get_look_delta()
+	else:
+		# When mobile is not active, combine mouse and controller
+		if keyboard_mouse_handler:
+			look = keyboard_mouse_handler.get_look_delta()
+		if controller_handler:
+			look += controller_handler.get_look_delta()  # Additive for smooth blending
+	
+	# Always add gyroscope input regardless of mobile state
+	# This allows gyroscope to work with touch gestures
+	if gyroscope_handler:
+		look += gyroscope_handler.get_look_delta()  # Add gyroscope input
 	
 	return look
+
+func get_roll_delta() -> float:
+	# Only gyroscope provides roll input for now
+	if gyroscope_handler:
+		return gyroscope_handler.get_roll_delta()
+	return 0.0
 
 func get_boost_modifier() -> float:
 	if is_mobile_active and mobile_handler:
@@ -135,3 +153,5 @@ func cleanup() -> void:
 		controller_handler.cleanup()
 	if mobile_handler:
 		mobile_handler.cleanup()
+	if gyroscope_handler:
+		gyroscope_handler.cleanup()

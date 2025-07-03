@@ -93,11 +93,12 @@ func _process(delta):
 		# Get unified input from InputManager
 		var movement_vector = input_manager.get_movement_vector()
 		var look_delta = input_manager.get_look_delta()
+		var roll_delta = input_manager.get_roll_delta()
 		var boost_modifier = input_manager.get_boost_modifier()
 		
 		# Apply movement and look
 		_apply_movement_from_input_manager(movement_vector, boost_modifier, delta)
-		_apply_look_from_input_manager(look_delta)
+		_apply_look_from_input_manager(look_delta, roll_delta)
 	
 	# Handle laser (will be active if signal was emitted this frame)
 	_handle_laser(is_laser_active)
@@ -112,14 +113,18 @@ func _apply_movement_from_input_manager(movement_vector: Vector3, boost_modifier
 		var world_movement = transform.basis * movement_vector
 		global_position += world_movement * current_speed * delta
 
-func _apply_look_from_input_manager(look_delta: Vector2):
-	# Apply look input from InputManager (replaces _handle_look_input + _handle_mouse_look)
-	if look_delta.length() > 0:
+func _apply_look_from_input_manager(look_delta: Vector2, roll_delta: float):
+	# Apply look input from InputManager with roll support
+	if look_delta.length() > 0 or roll_delta != 0:
+		# Apply yaw and pitch
 		rotate_y(look_delta.x)
 		var x_rotation = look_delta.y
 		var new_rotation = rotation.x + x_rotation
 		new_rotation = clamp(new_rotation, deg_to_rad(-90), deg_to_rad(90))
 		rotation.x = new_rotation
+		
+		# Apply roll
+		rotation.z += roll_delta
 
 func _update_spaceship_position():
 	var desired_position = global_position + transform.basis * Vector3(0.8, -0.5, -1.0)
