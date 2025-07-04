@@ -7,7 +7,7 @@ extends RefCounted
 # Signal definitions for continuous actions
 signal shoot  # Emitted continuously while shoot button/gesture is held
 signal laser  # Emitted continuously while laser button/gesture is held
-signal flight_mode_changed(mode: String)  # "NORMAL" or "BOOST" (for mobile only)
+signal flight_mode_changed(mode: String)  # Reserved for future mobile boost implementation
 
 # Input handlers (will be properly typed once handler files exist)
 var keyboard_mouse_handler
@@ -16,7 +16,6 @@ var mobile_handler
 var gyroscope_handler
 
 # State tracking
-var current_flight_mode := "NORMAL"
 var is_mobile_active := false
 
 func initialize(camera: Camera3D) -> void:
@@ -48,18 +47,25 @@ func _connect_handler_signals() -> void:
 	if mobile_handler:
 		mobile_handler.shoot.connect(_on_shoot)
 		mobile_handler.laser.connect(_on_laser)
-		mobile_handler.flight_mode_changed.connect(_on_flight_mode_changed)
+		# Note: Mobile handler currently only uses shoot signal - laser reserved for future
 
 # Signal forwarders  
 func _on_shoot() -> void:
+	# Debug: Find out which handler is calling this
+	var caller = "unknown"
+	if mobile_handler and mobile_handler.is_active():
+		caller = "mobile"
+	elif keyboard_mouse_handler:
+		caller = "keyboard_mouse"
+	else:
+		caller = "controller"
+	
+	print("DEBUG: InputManager _on_shoot called from: ", caller)
 	shoot.emit()
 
 func _on_laser() -> void:
+	print("DEBUG: InputManager _on_laser called")
 	laser.emit()
-
-func _on_flight_mode_changed(mode: String) -> void:
-	current_flight_mode = mode
-	flight_mode_changed.emit(mode)
 
 func process_input(delta: float) -> void:
 	# Update all handlers (when they exist)
@@ -77,12 +83,15 @@ func process_input(delta: float) -> void:
 
 func handle_input_event(event: InputEvent) -> void:
 	# Route input events to appropriate handlers (when they exist)
-	if keyboard_mouse_handler:
-		keyboard_mouse_handler.handle_input_event(event)
-	if controller_handler:
-		controller_handler.handle_input_event(event)
+
 	if mobile_handler:
 		mobile_handler.handle_input_event(event)
+	else:
+		if keyboard_mouse_handler: # Block all mouse input on mobile platform
+			keyboard_mouse_handler.handle_input_event(event)
+		if controller_handler:
+			controller_handler.handle_input_event(event)
+
 
 func _update_mobile_priority() -> void:
 	# Check if mobile input is currently active
@@ -126,9 +135,7 @@ func get_look_delta() -> Vector2:
 	return look
 
 func get_roll_delta() -> float:
-	# Only gyroscope provides roll input for now
-	if gyroscope_handler:
-		return gyroscope_handler.get_roll_delta()
+	# no rolling implemented yet
 	return 0.0
 
 func get_boost_modifier() -> float:

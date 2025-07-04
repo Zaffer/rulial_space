@@ -8,11 +8,8 @@ var enabled := true
 var last_orientation := Vector3.ZERO
 var calibrated := false
 var look_delta := Vector2.ZERO
-var debug_counter := 0  # Minimal debug for initial troubleshooting
-var camera_ref: Camera3D  # Reference to camera for orientation compensation
 
 func initialize(camera_ref: Camera3D) -> void:
-	self.camera_ref = camera_ref
 	_setup_gyroscope()
 
 func handle_input_event(event: InputEvent) -> void:
