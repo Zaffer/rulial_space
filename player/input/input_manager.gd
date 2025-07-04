@@ -83,15 +83,17 @@ func process_input(delta: float) -> void:
 
 func handle_input_event(event: InputEvent) -> void:
 	# Route input events to appropriate handlers (when they exist)
-
+	
+	# Always let mobile handler process touch events first
 	if mobile_handler:
 		mobile_handler.handle_input_event(event)
-	else:
-		if keyboard_mouse_handler: # Block all mouse input on mobile platform
+	
+	# Only allow keyboard/mouse if mobile is not currently active (has no touches)
+	if not is_mobile_active:
+		if keyboard_mouse_handler:
 			keyboard_mouse_handler.handle_input_event(event)
 		if controller_handler:
 			controller_handler.handle_input_event(event)
-
 
 func _update_mobile_priority() -> void:
 	# Check if mobile input is currently active
