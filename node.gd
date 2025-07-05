@@ -28,18 +28,8 @@ func _ready():
 	body_entered.connect(_on_collision)
 
 func _process(_delta):
-	# Visual feedback for anchor node
-	var mesh_instance = get_node("MeshInstance3D")
-	if mesh_instance and mesh_instance.get_surface_override_material(0):
-		var material = mesh_instance.get_surface_override_material(0) as StandardMaterial3D
-		if is_anchor:
-			# Make anchor node yellow
-			material.albedo_color = Color.YELLOW
-			material.emission = Color.YELLOW * 0.3
-		else:
-			# Normal blue color
-			material.albedo_color = Color(0.2, 0.6, 1, 1)
-			material.emission = Color(0.1, 0.3, 0.8, 1)
+	# No need for constant visual updates - anchor highlighting handled elsewhere
+	pass
 
 func _integrate_forces(state: PhysicsDirectBodyState3D):
 	apply_forces(state.get_step())
@@ -88,11 +78,53 @@ func _on_collision(body):
 	# When projectile hits this node
 	if body.collision_layer == 4:  # Projectile layer
 		print("Projectile hit node!")
+		# Trigger purple flash effect
+		flash_hit()
+		
 		# Apply rewrite rule to this node
 		var main_scene = get_tree().current_scene
 		if main_scene.has_method("apply_rewrite_to_node"):
-			main_scene.apply_rewrite_to_node(self)
-		body.queue_free()  # Destroy projectile
+			var success = main_scene.apply_rewrite_to_node(self)
+			if success:
+				body.queue_free()  # Only destroy projectile if rule was applied
+			else:
+				print("Rule could not be applied - projectile continues")
+		else:
+			body.queue_free()  # Fallback
+
+func flash_hit():
+	print("Flash hit triggered!")  # Debug output
+	# Create a simple light flash effect
+	var light = OmniLight3D.new()
+	light.position = Vector3.ZERO
+	light.light_color = Color.MAGENTA
+	light.light_energy = 15.0  # Much brighter
+	light.omni_range = 10.0    # Larger range
+	add_child(light)
+	
+	# Also create a visible sphere for the flash
+	var mesh_instance = MeshInstance3D.new()
+	var sphere_mesh = SphereMesh.new()
+	sphere_mesh.radius = 1.0
+	sphere_mesh.height = 2.0
+	mesh_instance.mesh = sphere_mesh
+	
+	# Create a bright purple material for the sphere
+	var material = StandardMaterial3D.new()
+	material.albedo_color = Color.MAGENTA
+	material.emission = Color.MAGENTA
+	material.emission_enabled = true
+	mesh_instance.material_override = material
+	add_child(mesh_instance)
+	
+	# Create a tween to fade out both effects
+	var tween = create_tween()
+	tween.parallel().tween_property(light, "light_energy", 0.0, 0.5)
+	tween.parallel().tween_property(mesh_instance, "scale", Vector3.ZERO, 0.5)
+	tween.tween_callback(func(): 
+		light.queue_free()
+		mesh_instance.queue_free()
+	)
 
 func apply_laser_attraction(laser_position: Vector3):
 	# Apply attraction force towards the laser position

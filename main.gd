@@ -15,6 +15,8 @@ var multiplayer_menu: Control
 var adjacency_matrix = []
 var hypergraph: HypergraphLogic
 var selected_node_idx: int = 0  # Currently selected node for rule application
+var selected_rule: String = "duplicate_node"  # Currently selected rule to apply when shooting
+var rule_ui: RuleUI  # UI showing current rule
 
 func _ready():
 	# Create anchor manager
@@ -43,6 +45,9 @@ func _ready():
 	hypergraph.generate_random_hyperedges(num_nodes)
 	
 	HypergraphVisualizer.initialize_visualization(hypergraph, nodes, edges, NodeScene, EdgeScene, anchor_manager, self, selected_node_idx)
+	
+	# Create rule visualization UI
+	_create_rule_ui()
 
 func _process(_delta):
 	# ALWAYS ensure mouse is visible when menu is open (overrides any capture attempts)
@@ -73,22 +78,32 @@ func _input(event):
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 			get_viewport().set_input_as_handled()
 	
-	# Hypergraph rewrite rules (when menu is closed)
+	# Rule selection (when menu is closed) - don't apply, just select
 	elif not multiplayer_menu.is_menu_open:
-		if event.is_action_pressed("ui_up"):  # Up arrow
-			RewritingRules.apply_rule(hypergraph, "triangle_to_edge", selected_node_idx)
-			HypergraphVisualizer.rebuild_visualization(hypergraph, nodes, edges, EdgeScene, self)
-		elif event.is_action_pressed("ui_down"):  # Down arrow
-			RewritingRules.apply_rule(hypergraph, "edge_to_triangle", selected_node_idx)
-			HypergraphVisualizer.rebuild_visualization(hypergraph, nodes, edges, EdgeScene, self)
-		elif event.is_action_pressed("ui_left"):  # Left arrow - select previous node
-			selected_node_idx = (selected_node_idx - 1) % num_nodes
-			HypergraphVisualizer.highlight_selected_node(nodes, selected_node_idx)
-		elif event.is_action_pressed("ui_right"):  # Right arrow - select next node
+		if event.is_action_pressed("ui_up"):  # Up arrow - select triangle to edge
+			selected_rule = "triangle_to_edge"
+			print("Selected rule: triangle_to_edge")
+			_update_rule_ui()
+		elif event.is_action_pressed("ui_down"):  # Down arrow - select edge to triangle
+			selected_rule = "edge_to_triangle"
+			print("Selected rule: edge_to_triangle")
+			_update_rule_ui()
+		elif event.is_action_pressed("ui_left"):  # Left arrow - select isolate node
+			selected_rule = "isolate_node"
+			print("Selected rule: isolate_node")
+			_update_rule_ui()
+		elif event.is_action_pressed("ui_right"):  # Right arrow - select create star
+			selected_rule = "create_star"
+			print("Selected rule: create_star")
+			_update_rule_ui()
+		elif event.is_action_pressed("ui_select"):  # Space key - select duplicate node
+			selected_rule = "duplicate_node"
+			print("Selected rule: duplicate_node")
+			_update_rule_ui()
+		elif event.is_action_pressed("ui_accept"):  # Enter - print matrix and cycle selected node
+			hypergraph.print_matrix()
 			selected_node_idx = (selected_node_idx + 1) % num_nodes
 			HypergraphVisualizer.highlight_selected_node(nodes, selected_node_idx)
-		elif event.is_action_pressed("ui_accept"):  # Space/Enter - print matrix
-			hypergraph.print_matrix()
 			print("Selected node: ", selected_node_idx)
 
 
@@ -126,9 +141,37 @@ func _create_multiplayer_menu():
 	# Setup connections
 	multiplayer_menu.setup_multiplayer_manager(multiplayer_manager)
 
+func _create_rule_ui():
+	# Create CanvasLayer for HUD overlay with high layer index
+	var canvas_layer = CanvasLayer.new()
+	canvas_layer.layer = 10  # High layer to appear on top
+	add_child(canvas_layer)
+	
+	# Create rule UI and add to canvas layer
+	rule_ui = RuleUI.new()
+	canvas_layer.add_child(rule_ui)
+	
+	# Update UI with initial rule
+	_update_rule_ui()
+
+func _update_rule_ui():
+	if rule_ui:
+		rule_ui.update_rule(selected_rule)
+
 # Handle projectile hitting a node (called from node.gd)
 func apply_rewrite_to_node(hit_node):
 	var node_index = hit_node.get_meta("node_index", -1)
+	print("Hit detected! Node index: ", node_index, ", Selected rule: ", selected_rule)
+	
 	if node_index >= 0:
-		RewritingRules.apply_rule(hypergraph, "triangle_to_edge", node_index)
-		HypergraphVisualizer.rebuild_visualization(hypergraph, nodes, edges, EdgeScene, self)
+		print("Applying rule '", selected_rule, "' to node ", node_index)
+		var success = RewritingRules.apply_rule(hypergraph, selected_rule, node_index)
+		if success:
+			print("Rule application SUCCESS - rebuilding visualization")
+			HypergraphVisualizer.rebuild_visualization(hypergraph, nodes, edges, EdgeScene, self)
+		else:
+			print("Rule application FAILED - no changes made")
+		return success
+	else:
+		print("ERROR: Node index not found or invalid")
+		return false

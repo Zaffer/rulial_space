@@ -168,6 +168,15 @@ func use_attraction_laser():
 	var result = space_state.intersect_ray(query)
 	if result and result.collider.is_in_group("nodes"):
 		result.collider.call("apply_laser_attraction", beam_start)
+		
+		# Trigger flash effect on hit node
+		if result.collider.has_method("flash_hit"):
+			result.collider.flash_hit()
+		
+		# Apply rewrite rule to the hit node
+		var main_scene = get_tree().current_scene
+		if main_scene.has_method("apply_rewrite_to_node"):
+			main_scene.apply_rewrite_to_node(result.collider)
 
 func _handle_laser(active: bool):
 	var spaceship_mesh = spaceship.get_child(0)

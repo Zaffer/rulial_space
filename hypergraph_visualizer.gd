@@ -59,16 +59,38 @@ static func rebuild_visualization(hypergraph: HypergraphLogic, nodes: Array, edg
 	for node in nodes:
 		node.connected_nodes.clear()
 	
+	# Check if we need to create new nodes (when rules add nodes to the hypergraph)
+	var NodeScene = preload("res://node.tscn")  # Load the node scene
+	while nodes.size() < hypergraph.num_nodes:
+		var new_node_idx = nodes.size()
+		var node_instance = NodeScene.instantiate()
+		parent_node.add_child(node_instance)
+		node_instance.set_meta("node_index", new_node_idx)
+		
+		# Position new nodes near existing nodes for better connectivity
+		var base_position = Vector3.ZERO
+		if nodes.size() > 0:
+			# Position near the last existing node
+			base_position = nodes[nodes.size() - 1].global_transform.origin
+		
+		var offset = Vector3(randf() * 2.0 - 1.0, randf() * 2.0 - 1.0, randf() * 2.0 - 1.0) * 2.0
+		node_instance.global_transform.origin = base_position + offset
+		
+		nodes.append(node_instance)
+		print("Created new node ", new_node_idx, " at position ", node_instance.global_transform.origin)
+	
 	# Recreate edges from updated hypergraph
 	for edge_idx in range(hypergraph.num_hyperedges):
-		var connected_nodes = hypergraph.get_hyperedge_nodes(edge_idx)
-		for i in range(connected_nodes.size()):
-			for j in range(i + 1, connected_nodes.size()):
-				if connected_nodes[i] < nodes.size() and connected_nodes[j] < nodes.size():
+		var connected_nodes_indices = hypergraph.get_hyperedge_nodes(edge_idx)
+		for i in range(connected_nodes_indices.size()):
+			for j in range(i + 1, connected_nodes_indices.size()):
+				var node_i = connected_nodes_indices[i]
+				var node_j = connected_nodes_indices[j]
+				if node_i < nodes.size() and node_j < nodes.size():
 					var edge_instance = EdgeScene.instantiate()
 					parent_node.add_child(edge_instance)
-					edge_instance.start_node = nodes[connected_nodes[i]]
-					edge_instance.end_node = nodes[connected_nodes[j]]
+					edge_instance.start_node = nodes[node_i]
+					edge_instance.end_node = nodes[node_j]
 					edges.append(edge_instance)
-					nodes[connected_nodes[i]].connected_nodes.append(nodes[connected_nodes[j]])
-					nodes[connected_nodes[j]].connected_nodes.append(nodes[connected_nodes[i]])
+					nodes[node_i].connected_nodes.append(nodes[node_j])
+					nodes[node_j].connected_nodes.append(nodes[node_i])

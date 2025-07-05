@@ -31,6 +31,13 @@ static func create_star() -> Dictionary:
 		4, [[0, 1], [0, 2], [0, 3]]  # RHS: star pattern
 	)
 
+# Duplicate node: creates a new node connected to the original
+static func duplicate_node() -> Dictionary:
+	return HypergraphLogic.create_rule(
+		1, [],           # LHS: single node (no edges required)
+		2, [[0, 1]]      # RHS: original node + new node connected by edge
+	)
+
 # Apply a rule by name to a hypergraph at a specific node
 static func apply_rule(hypergraph: HypergraphLogic, rule_name: String, anchor_node: int) -> bool:
 	var rule = get_rule_by_name(rule_name)
@@ -57,9 +64,11 @@ static func get_rule_by_name(rule_name: String) -> Dictionary:
 			return isolate_node()
 		"create_star":
 			return create_star()
+		"duplicate_node":
+			return duplicate_node()
 		_:
 			return {}
 
 # Get list of all available rule names
 static func get_all_rule_names() -> Array:
-	return ["triangle_to_edge", "edge_to_triangle", "isolate_node", "create_star"]
+	return ["triangle_to_edge", "edge_to_triangle", "isolate_node", "create_star", "duplicate_node"]
