@@ -51,8 +51,10 @@ func process_input(delta: float) -> void:
 
 func _update_action_states() -> void:
 	# Update action states based on current button presses
-	shoot_pressed = Input.is_joy_button_pressed(controller_id, JOY_BUTTON_A) or Input.is_joy_button_pressed(controller_id, JOY_BUTTON_RIGHT_SHOULDER)
-	laser_pressed = Input.is_joy_button_pressed(controller_id, JOY_BUTTON_B)
+	# Shoot: Right shoulder button (previously A button)
+	shoot_pressed = Input.is_joy_button_pressed(controller_id, JOY_BUTTON_RIGHT_SHOULDER)
+	# Laser: Left shoulder button (LB)
+	laser_pressed = Input.is_joy_button_pressed(controller_id, JOY_BUTTON_LEFT_SHOULDER)
 
 func _emit_continuous_actions() -> void:
 	# Emit continuous action signals while buttons are held
@@ -97,8 +99,8 @@ func _update_movement_input(_delta: float) -> void:
 	current_movement = input_vector
 
 func _update_boost_input() -> void:
-	# Check for boost input (Left Shoulder button)
-	current_boost_modifier = boost_multiplier if Input.is_joy_button_pressed(controller_id, JOY_BUTTON_LEFT_SHOULDER) else 1.0
+	# Check for boost input (Left stick click/press - L3)
+	current_boost_modifier = boost_multiplier if Input.is_joy_button_pressed(controller_id, JOY_BUTTON_LEFT_STICK) else 1.0
 
 # Interface implementation
 func get_movement_vector() -> Vector3:

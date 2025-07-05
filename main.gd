@@ -78,28 +78,52 @@ func _input(event):
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 			get_viewport().set_input_as_handled()
 	
-	# Rule selection (when menu is closed) - don't apply, just select
+	# Rule selection (when menu is closed) - keyboard numbers and controller ABXY
 	elif not multiplayer_menu.is_menu_open:
-		if event.is_action_pressed("ui_up"):  # Up arrow - select triangle to edge
-			selected_rule = "triangle_to_edge"
-			print("Selected rule: triangle_to_edge")
-			_update_rule_ui()
-		elif event.is_action_pressed("ui_down"):  # Down arrow - select edge to triangle
-			selected_rule = "edge_to_triangle"
-			print("Selected rule: edge_to_triangle")
-			_update_rule_ui()
-		elif event.is_action_pressed("ui_left"):  # Left arrow - select isolate node
-			selected_rule = "isolate_node"
-			print("Selected rule: isolate_node")
-			_update_rule_ui()
-		elif event.is_action_pressed("ui_right"):  # Right arrow - select create star
-			selected_rule = "create_star"
-			print("Selected rule: create_star")
-			_update_rule_ui()
-		elif event.is_action_pressed("ui_select"):  # Space key - select duplicate node
-			selected_rule = "duplicate_node"
-			print("Selected rule: duplicate_node")
-			_update_rule_ui()
+		# Check for keyboard number keys
+		if event is InputEventKey and event.pressed:
+			match event.keycode:
+				KEY_1:
+					selected_rule = "triangle_to_edge"
+					print("Selected rule: triangle_to_edge")
+					_update_rule_ui()
+				KEY_2:
+					selected_rule = "edge_to_triangle"
+					print("Selected rule: edge_to_triangle")
+					_update_rule_ui()
+				KEY_3:
+					selected_rule = "isolate_node"
+					print("Selected rule: isolate_node")
+					_update_rule_ui()
+				KEY_4:
+					selected_rule = "create_star"
+					print("Selected rule: create_star")
+					_update_rule_ui()
+				KEY_5:
+					selected_rule = "duplicate_node"
+					print("Selected rule: duplicate_node")
+					_update_rule_ui()
+		
+		# Check for controller face buttons
+		elif event is InputEventJoypadButton and event.pressed:
+			match event.button_index:
+				JOY_BUTTON_A:  # A button - triangle to edge
+					selected_rule = "duplicate_node"
+					print("Selected rule: duplicate_node")
+					_update_rule_ui()
+				JOY_BUTTON_B:  # B button - edge to triangle
+					selected_rule = "edge_to_triangle"
+					print("Selected rule: edge_to_triangle")
+					_update_rule_ui()
+				JOY_BUTTON_X:  # X button - isolate node
+					selected_rule = "isolate_node"
+					print("Selected rule: isolate_node")
+					_update_rule_ui()
+				JOY_BUTTON_Y:  # Y button - create star
+					selected_rule = "create_star"
+					print("Selected rule: create_star")
+					_update_rule_ui()
+		
 		elif event.is_action_pressed("ui_accept"):  # Enter - print matrix and cycle selected node
 			hypergraph.print_matrix()
 			selected_node_idx = (selected_node_idx + 1) % num_nodes

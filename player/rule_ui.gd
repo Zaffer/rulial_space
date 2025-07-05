@@ -35,7 +35,7 @@ func _setup_ui():
 	# Create horizontal layout centered in panel
 	hbox = HBoxContainer.new()
 	hbox.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	hbox.position = Vector2(-100, -15)  # Center in panel
+	hbox.position = Vector2(-50, -12)  # Move further right to center
 	panel.add_child(hbox)
 	
 	# LHS label with larger font
@@ -66,20 +66,20 @@ func update_rule(rule_name: String):
 	# Simple text representation of rules
 	match rule_name:
 		"triangle_to_edge":
-			lhs_label.text = "●-●-●"
-			rhs_label.text = "●-●"
+			lhs_label.text = "▲"  # Triangle symbol for 3-node hyperedge
+			rhs_label.text = "●-●"  # Simple edge
 		"edge_to_triangle":
-			lhs_label.text = "●-●"
-			rhs_label.text = "●-●-●"
+			lhs_label.text = "●-●"  # Simple edge
+			rhs_label.text = "▲"  # Triangle symbol for 3-node hyperedge
 		"isolate_node":
-			lhs_label.text = "●-●"
-			rhs_label.text = "● ●"
+			lhs_label.text = "●-●"  # Connected nodes
+			rhs_label.text = "● ●"  # Isolated nodes
 		"create_star":
-			lhs_label.text = "●"
-			rhs_label.text = "●-●-●"
+			lhs_label.text = "●"  # Single node
+			rhs_label.text = "✱"  # Star symbol
 		"duplicate_node":
-			lhs_label.text = "●"
-			rhs_label.text = "●-●"
+			lhs_label.text = "●"  # Single node
+			rhs_label.text = "●-●"  # Two connected nodes
 		_:
 			lhs_label.text = "?"
 			rhs_label.text = "?"

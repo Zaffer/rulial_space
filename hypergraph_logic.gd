@@ -48,18 +48,12 @@ func get_hyperedge_nodes(hyperedge_idx: int) -> Array:
 # Apply rewrite rule anchored to a specific node: LHS -> RHS
 func apply_rewrite_rule_at_node(lhs: HypergraphLogic, rhs: HypergraphLogic, anchor_node: int, lhs_anchor: int = 0, rhs_anchor: int = 0) -> bool:
 	if anchor_node >= num_nodes:
-		print("Error: anchor_node ", anchor_node, " out of bounds (", num_nodes, " nodes)")
 		return false
-	
-	print("Trying to match LHS pattern with anchor ", lhs_anchor, " to graph anchor ", anchor_node)
 	
 	# Try to find and remove the LHS pattern anchored at the specified node
 	var node_mapping = _find_pattern_match(lhs, anchor_node, lhs_anchor)
 	if node_mapping.is_empty():
-		print("No matching LHS pattern found around anchor node ", anchor_node)
 		return false
-	
-	print("Found pattern match! Node mapping: ", node_mapping)
 	
 	# Remove the matched pattern
 	_remove_matched_pattern(lhs, node_mapping)
@@ -71,11 +65,8 @@ func apply_rewrite_rule_at_node(lhs: HypergraphLogic, rhs: HypergraphLogic, anch
 
 # Find if LHS pattern exists around the anchor node
 func _find_pattern_match(pattern: HypergraphLogic, anchor_node: int, pattern_anchor: int) -> Dictionary:
-	print("Looking for pattern with ", pattern.num_hyperedges, " edges around anchor ", anchor_node)
-	
 	# Special case: empty LHS pattern (always matches)
 	if pattern.num_hyperedges == 0:
-		print("Empty LHS pattern - always matches")
 		var mapping = {}
 		mapping[pattern_anchor] = anchor_node
 		return mapping
@@ -88,15 +79,11 @@ func _find_pattern_match(pattern: HypergraphLogic, anchor_node: int, pattern_anc
 	for pattern_edge_idx in range(pattern.num_hyperedges):
 		var pattern_edge_nodes = pattern.get_hyperedge_nodes(pattern_edge_idx)
 		if pattern_anchor in pattern_edge_nodes:
-			print("Checking pattern edge ", pattern_edge_idx, " with nodes ", pattern_edge_nodes)
-			
 			# Look for a matching edge in the actual graph
 			var found_match = false
 			for graph_edge_idx in range(num_hyperedges):
 				var graph_edge_nodes = get_hyperedge_nodes(graph_edge_idx)
 				if anchor_node in graph_edge_nodes and graph_edge_nodes.size() == pattern_edge_nodes.size():
-					print("Found potential graph edge ", graph_edge_idx, " with nodes ", graph_edge_nodes)
-					
 					# Try to extend the node mapping
 					var extended_mapping = node_mapping.duplicate()
 					var mapping_valid = true
@@ -122,15 +109,12 @@ func _find_pattern_match(pattern: HypergraphLogic, anchor_node: int, pattern_anc
 						break
 			
 			if not found_match:
-				print("No matching edge found for pattern edge ", pattern_edge_idx)
 				return {}  # Pattern doesn't match
 	
 	return node_mapping
 
 # Remove edges that were matched by the pattern
 func _remove_matched_pattern(pattern: HypergraphLogic, node_mapping: Dictionary):
-	print("Removing matched pattern edges...")
-	
 	# For each edge in the pattern, find and remove the corresponding edge in the graph
 	for pattern_edge_idx in range(pattern.num_hyperedges):
 		var pattern_edge_nodes = pattern.get_hyperedge_nodes(pattern_edge_idx)
@@ -145,14 +129,11 @@ func _remove_matched_pattern(pattern: HypergraphLogic, node_mapping: Dictionary)
 		for graph_edge_idx in range(num_hyperedges - 1, -1, -1):
 			var graph_edge_nodes = get_hyperedge_nodes(graph_edge_idx)
 			if _arrays_match_unordered(graph_edge_nodes, target_edge_nodes):
-				print("Removing graph edge ", graph_edge_idx, " with nodes ", graph_edge_nodes)
 				_remove_hyperedge(graph_edge_idx)
 				break
 
 # Add RHS pattern around the anchor
 func _add_rhs_pattern(rhs: HypergraphLogic, anchor_node: int, rhs_anchor: int, _lhs_mapping: Dictionary):
-	print("Adding RHS pattern...")
-	
 	# Create mapping for RHS nodes
 	var rhs_mapping = {}
 	rhs_mapping[rhs_anchor] = anchor_node
@@ -177,8 +158,16 @@ func _add_rhs_pattern(rhs: HypergraphLogic, anchor_node: int, rhs_anchor: int, _
 				if next_available_node > num_nodes:
 					_add_new_node()
 		
-		print("Adding RHS edge with nodes ", new_edge_nodes)
-		add_hyperedge(new_edge_nodes)
+		# Check for duplicate edges before adding
+		var edge_already_exists = false
+		for existing_edge_idx in range(num_hyperedges):
+			var existing_edge_nodes = get_hyperedge_nodes(existing_edge_idx)
+			if _arrays_match_unordered(existing_edge_nodes, new_edge_nodes):
+				edge_already_exists = true
+				break
+		
+		if not edge_already_exists:
+			add_hyperedge(new_edge_nodes)
 
 # Helper function to check if two arrays contain the same elements (unordered)
 func _arrays_match_unordered(arr1: Array, arr2: Array) -> bool:
@@ -200,7 +189,6 @@ func _add_new_node():
 		new_row.append(0)
 	incidence_matrix.append(new_row)
 	num_nodes += 1
-	print("Added new node. Total nodes now: ", num_nodes)
 
 func _remove_hyperedge(edge_idx: int):
 	if edge_idx >= num_hyperedges:
