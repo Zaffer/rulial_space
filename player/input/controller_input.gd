@@ -12,8 +12,8 @@ var boost_multiplier := 5.0
 var accumulated_look_delta := Vector2.ZERO
 var current_movement := Vector3.ZERO
 var current_boost_modifier := 1.0
-var is_shooting := false
-var is_laser_active := false
+var shoot_pressed := false
+var laser_pressed := false
 var controller_id := -1  # Cached controller ID
 
 # Reference to camera for coordinate transforms
@@ -51,14 +51,14 @@ func process_input(delta: float) -> void:
 
 func _update_action_states() -> void:
 	# Update action states based on current button presses
-	is_shooting = Input.is_joy_button_pressed(controller_id, JOY_BUTTON_A) or Input.is_joy_button_pressed(controller_id, JOY_BUTTON_RIGHT_SHOULDER)
-	is_laser_active = Input.is_joy_button_pressed(controller_id, JOY_BUTTON_B)
+	shoot_pressed = Input.is_joy_button_pressed(controller_id, JOY_BUTTON_A) or Input.is_joy_button_pressed(controller_id, JOY_BUTTON_RIGHT_SHOULDER)
+	laser_pressed = Input.is_joy_button_pressed(controller_id, JOY_BUTTON_B)
 
 func _emit_continuous_actions() -> void:
 	# Emit continuous action signals while buttons are held
-	if is_shooting:
+	if shoot_pressed:
 		shoot.emit()
-	if is_laser_active:
+	if laser_pressed:
 		laser.emit()
 
 func _update_look_input(delta: float) -> void:
@@ -112,3 +112,15 @@ func get_look_delta() -> Vector2:
 
 func get_boost_modifier() -> float:
 	return current_boost_modifier
+
+# Action state methods (new direct method approach)
+func is_shooting() -> bool:
+	return shoot_pressed
+
+func is_using_laser() -> bool:
+	return laser_pressed
+
+# State query methods
+func is_active() -> bool:
+	# Controller is considered active if any action is being performed and controller is connected
+	return controller_id >= 0 and (shoot_pressed or laser_pressed or current_movement.length() > 0.1)

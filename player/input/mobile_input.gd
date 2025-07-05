@@ -2,6 +2,11 @@ extends "res://player/input/input_handler.gd"
 class_name MobileInput
 
 # Handles mobile touch gestures: tap/drag for shooting and looking, pinch for movement, two-finger strafe
+# TODO: major issue with shooting/clicking/tapping and some error on chrome: 'Uncaught (in promise)
+# TODO: make it relative to current position
+# TODO: make gyroscope movement cause look to be screen-relative instead of world-relative
+# TODO: make background image visible on mobile, some compact image error
+# TODO: implement option to bring up multipler menu and test webrtc exntension work on mobile
 
 # Mobile input settings
 var mobile_sensitivity := 1.0
@@ -18,15 +23,12 @@ var last_two_finger_time := 0.0  # Track when we last had two fingers
 # Input state
 var accumulated_look_delta := Vector2.ZERO
 var current_movement := Vector3.ZERO
+var is_shooting_active := false  # Track shooting state for direct method calls
+var last_shot_time := 0.0  # For shot cooldown
 
 # Camera reference
 var camera: Camera3D
 var fly_speed := 12.0
-
-# Signals
-signal shoot
-signal laser  # Reserved for future use
-signal flight_mode_changed(mode: String)  # Reserved for future use
 
 func initialize(camera_ref: Camera3D) -> void:
 	camera = camera_ref
@@ -44,8 +46,10 @@ func handle_input_event(event: InputEvent) -> void:
 				"start_time": Time.get_ticks_msec() / 1000.0,
 				"last_position": event.position,
 				"has_dragged": false,
-				"shot_fired": false
+				"is_shooting": true  # Start shooting on touch down
 			}
+			# Set shooting active when any finger touches
+			is_shooting_active = true
 		else:
 			if event.index in mobile_touches:
 				_handle_mobile_release(event.index)
@@ -64,34 +68,29 @@ func process_input(delta: float) -> void:
 	if touch_count >= 2:
 		last_two_finger_time = Time.get_ticks_msec() / 1000.0
 		_handle_pinch_gesture(delta)
+		
+		# Disable shooting for all touches when using two-finger gestures
+		for touch_data in mobile_touches.values():
+			touch_data["is_shooting"] = false
 	
-	# Reset all movement if no touches
+	# Reset all movement and shooting if no touches
 	if touch_count == 0:
 		current_movement = Vector3.ZERO  # Reset everything when no touches
+		is_shooting_active = false  # Reset shooting state when no touches
+	else:
+		# Update shooting state - active if any touch is shooting
+		is_shooting_active = false
+		for touch_data in mobile_touches.values():
+			if touch_data.get("is_shooting", false):
+				is_shooting_active = true
+				break
 
 func _handle_mobile_release(_finger_id: int) -> void:
 	# Clean up on touch release - no special handling needed
 	pass
 
-func _handle_mobile_drag(finger_id: int, relative: Vector2) -> void:
+func _handle_mobile_drag(_finger_id: int, relative: Vector2) -> void:
 	var touch_count = mobile_touches.size()
-	var touch_data = mobile_touches[finger_id]
-	var current_time = Time.get_ticks_msec() / 1000.0
-	
-	# Fire single shot on first drag
-	if not touch_data["shot_fired"]:
-		shoot.emit()
-		touch_data["shot_fired"] = true
-	
-	# # Simple fix for fast second finger: ignore very large relative movements on first drag
-	# # (these are usually caused by rapid finger placement)
-	# if not touch_data["has_dragged"] and relative.length() > 50.0:
-	# 	return  # Skip this first large movement
-	
-	# # Simple fix for finger lifting: ignore single finger drags right after two-finger gestures
-	# # (these are usually caused by one finger lifting slightly before the other)
-	# if touch_count == 1 and (current_time - last_two_finger_time) < 0.2:
-	# 	return  # Skip single finger drags shortly after two-finger gestures
 	
 	# Simple gesture based on touch count
 	if touch_count == 1:
@@ -155,3 +154,10 @@ func get_boost_modifier() -> float:
 
 func is_active() -> bool:
 	return mobile_touches.size() > 0
+
+# Action state methods (new direct method approach)
+func is_shooting() -> bool:
+	return is_shooting_active
+
+func is_using_laser() -> bool:
+	return false  # Not implemented for mobile yet

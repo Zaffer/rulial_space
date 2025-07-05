@@ -12,8 +12,8 @@ var boost_multiplier := 5.0
 var accumulated_look_delta := Vector2.ZERO
 var current_movement := Vector3.ZERO
 var current_boost_modifier := 1.0
-var is_shooting := false
-var is_laser_active := false
+var shoot_pressed := false
+var laser_pressed := false
 
 # Reference to camera for coordinate transforms
 var camera: Camera3D
@@ -37,9 +37,9 @@ func handle_input_event(event: InputEvent) -> void:
 func _handle_mouse_buttons(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
-			is_shooting = event.pressed
+			shoot_pressed = event.pressed
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			is_laser_active = event.pressed
+			laser_pressed = event.pressed
 
 func _handle_mouse_look(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
@@ -61,9 +61,9 @@ func process_input(_delta: float) -> void:
 
 func _emit_continuous_actions() -> void:
 	# Emit continuous action signals while buttons are held
-	if is_shooting:
+	if shoot_pressed:
 		shoot.emit()
-	if is_laser_active:
+	if laser_pressed:
 		laser.emit()
 
 func _update_action_input() -> void:
@@ -106,3 +106,15 @@ func get_look_delta() -> Vector2:
 
 func get_boost_modifier() -> float:
 	return current_boost_modifier
+
+# Action state methods (new direct method approach)
+func is_shooting() -> bool:
+	return shoot_pressed
+
+func is_using_laser() -> bool:
+	return laser_pressed
+
+# State query methods
+func is_active() -> bool:
+	# Keyboard/mouse is considered active if any action is being performed
+	return shoot_pressed or laser_pressed or current_movement.length() > 0.1

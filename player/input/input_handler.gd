@@ -17,6 +17,20 @@ func get_boost_modifier() -> float:
 	# Return boost multiplier (1.0 = normal, higher = boosted)
 	return 1.0
 
+# Action state methods (direct polling instead of signals)
+func is_shooting() -> bool:
+	# Return true if shooting action is currently active
+	return false
+
+func is_using_laser() -> bool:
+	# Return true if laser action is currently active
+	return false
+
+# State query methods
+func is_active() -> bool:
+	# Return true if this input handler is currently active/being used
+	return false
+
 # Setup and cleanup methods
 func initialize(_camera: Camera3D) -> void:
 	# Called when handler is first created

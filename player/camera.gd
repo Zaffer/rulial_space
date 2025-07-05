@@ -83,10 +83,7 @@ func _handle_fullscreen_toggle(event):
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 
 func _process(delta):
-	# Reset laser state each frame - will be set to true by signal if active this frame
-	is_laser_active = false
-	
-	# Use InputManager for all input (this will emit signals that set is_laser_active)
+	# Use InputManager for all input
 	if input_manager:
 		input_manager.process_input(delta)
 		
@@ -96,11 +93,18 @@ func _process(delta):
 		var roll_delta = input_manager.get_roll_delta()
 		var boost_modifier = input_manager.get_boost_modifier()
 		
+		# Check actions using new direct method approach
+		if input_manager.is_shooting():
+			_on_shoot()
+		
+		# Check laser state
+		is_laser_active = input_manager.is_using_laser()
+		
 		# Apply movement and look
 		_apply_movement_from_input_manager(movement_vector, boost_modifier, delta)
 		_apply_look_from_input_manager(look_delta, roll_delta)
 	
-	# Handle laser (will be active if signal was emitted this frame)
+	# Handle laser (will be active if detected this frame)
 	_handle_laser(is_laser_active)
 	
 	_update_spaceship_position()
@@ -183,11 +187,6 @@ func _initialize_input_manager():
 	var InputManagerClass = preload("res://player/input/input_manager.gd")
 	input_manager = InputManagerClass.new()
 	input_manager.initialize(self)
-	
-	# Connect to input manager signals
-	input_manager.shoot.connect(_on_shoot)
-	input_manager.laser.connect(_on_laser)
-	input_manager.flight_mode_changed.connect(_on_flight_mode_changed)
 
 # Input action handlers
 func _on_shoot():
