@@ -85,11 +85,14 @@ func apply_forces(_delta: float):
 		apply_central_force(external_attraction)
 
 func _on_collision(body):
-	# When spaceship or other physics bodies collide with this node
-	if body != self:  # Don't react to self
-		print("Node collision with: ", body.name)
-		# The physics engine will handle the collision response automatically
-		# You could add special effects here like particles, sounds, etc.
+	# When projectile hits this node
+	if body.collision_layer == 4:  # Projectile layer
+		print("Projectile hit node!")
+		# Apply rewrite rule to this node
+		var main_scene = get_tree().current_scene
+		if main_scene.has_method("apply_rewrite_to_node"):
+			main_scene.apply_rewrite_to_node(self)
+		body.queue_free()  # Destroy projectile
 
 func apply_laser_attraction(laser_position: Vector3):
 	# Apply attraction force towards the laser position
