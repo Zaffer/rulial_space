@@ -173,6 +173,7 @@ func _create_rule_ui():
 	
 	# Create rule UI and add to canvas layer
 	rule_ui = RuleUI.new()
+	rule_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas_layer.add_child(rule_ui)
 	
 	# Update UI with initial rule
