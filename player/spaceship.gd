@@ -59,7 +59,6 @@ func _ready():
 	material.emission_enabled = true
 	material.emission = Color.DARK_RED * 0.3  # Slight glow
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED  # Make double-sided
-	material.flags_do_not_use_vertex_normals = false  # Use calculated normals
 	set_surface_override_material(0, material)
 	
 	# Add wireframe edges
