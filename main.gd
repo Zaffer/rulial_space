@@ -16,7 +16,7 @@ var adjacency_matrix = []
 var hypergraph: HypergraphLogic
 var selected_node_idx: int = 0  # Currently selected node for rule application
 var selected_rule: String = "duplicate_node"  # Currently selected rule to apply when shooting
-var rule_ui: RuleUI  # UI showing current rule
+var rule_ui: Rule  # UI showing current rule
 
 func _ready():
 	# Create anchor manager
@@ -172,7 +172,8 @@ func _create_rule_ui():
 	add_child(canvas_layer)
 	
 	# Create rule UI and add to canvas layer
-	rule_ui = RuleUI.new()
+	var rule_scene = preload("res://player/rule.tscn")
+	rule_ui = rule_scene.instantiate()
 	rule_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas_layer.add_child(rule_ui)
 	

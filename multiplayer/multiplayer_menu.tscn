@@ -47,7 +47,6 @@ alignment = 1
 
 [node name="PortalLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer/MenuButtonsContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
 text = "🧿Multiplayer Wormhole"
 
 [node name="Spacer" type="Label" parent="Panel/MarginContainer/VBoxContainer/MenuButtonsContainer"]
