@@ -29,20 +29,20 @@ func update_rule(rule_name: String):
 	# Simple text representation of rules
 	match rule_name:
 		"triangle_to_edge":
-			lhs_label.text = "▲"  # Triangle symbol for 3-node hyperedge
-			rhs_label.text = "🔵-🔵"  # Simple edge
+			lhs_label.text = "🔺"  # Triangle symbol for 3-node hyperedge
+			rhs_label.text = "🟣-🟣"  # Simple edge
 		"edge_to_triangle":
 			lhs_label.text = "🔵-🔵"  # Simple edge
-			rhs_label.text = "▲"  # Triangle symbol for 3-node hyperedge
+			rhs_label.text = "🔺"  # Triangle symbol for 3-node hyperedge
 		"isolate_node":
 			lhs_label.text = "🔵-🔵"  # Connected nodes
-			rhs_label.text = "🔵 🔵"  # Isolated nodes
+			rhs_label.text = "🟣 🟣"  # Isolated nodes
 		"create_star":
 			lhs_label.text = "🔵"  # Single node
-			rhs_label.text = "✱"  # Star symbol
+			rhs_label.text = "⭐"  # Star symbol
 		"duplicate_node":
 			lhs_label.text = "🔵"  # Single node
-			rhs_label.text = "🔵-🔵"  # Two connected nodes
+			rhs_label.text = "🟣-🟣"  # Two connected nodes
 		_:
 			lhs_label.text = "?"
 			rhs_label.text = "?"

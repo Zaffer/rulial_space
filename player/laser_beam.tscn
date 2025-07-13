@@ -1,0 +1,29 @@
+[gd_scene load_steps=6 format=3 uid="uid://c3x4v8n9m1pk2"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_laser"]
+size = Vector3(0.1, 0.1, 50)
+
+[sub_resource type="Gradient" id="Gradient_laser_fade"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_laser"]
+gradient = SubResource("Gradient_laser_fade")
+fill_from = Vector2(0, 0)
+fill_to = Vector2(0, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_laser"]
+flags_transparent = true
+flags_unshaded = true
+albedo_color = Color(0.5, 0, 0.5, 1)
+albedo_texture = SubResource("GradientTexture2D_laser")
+emission_enabled = true
+emission = Color(1, 0, 1, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_laser_advanced"]
+render_priority = 0
+
+[node name="LaserBeam" type="MeshInstance3D"]
+mesh = SubResource("BoxMesh_laser")
+surface_material_override/0 = SubResource("StandardMaterial3D_laser")

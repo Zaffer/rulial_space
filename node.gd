@@ -5,16 +5,21 @@ extends RigidBody3D
 @export var attraction_strength: float = 20.0
 @export var anchor_strength: float = 100.0
 @export var optimal_distance: float = 3.0
+@export var max_repulsion_distance: float = 8.0  # Only apply repulsion within this distance
 
 var is_anchor: bool = false
 var external_attraction_force: Vector3 = Vector3.ZERO
-var external_attraction_strength: float = 5.0
+var external_attraction_strength: float = 20.0  # Match projectile speed for equivalent impact
+var last_laser_force_time: float = 0.0  # Track when laser force was last applied
+var laser_force_cooldown: float = 0.2  # Match gun's shoot cooldown
 
 func _ready():
 	add_to_group("nodes")
 	# Use Godot's built-in damping
 	linear_damp = 5.0
 	angular_damp = 5.0
+	
+	# Use world gravity (no need to set gravity_scale, default is 1.0)
 	
 	# Set collision layer for proper interaction
 	collision_layer = 1  # Layer 1 for nodes
@@ -35,11 +40,9 @@ func _integrate_forces(state: PhysicsDirectBodyState3D):
 	apply_forces(state.get_step())
 
 func apply_forces(_delta: float):
-	# Apply external attraction force (from laser)
+	# Apply external attraction force (from laser) if active
 	if external_attraction_force.length() > 0:
 		apply_central_force(external_attraction_force * external_attraction_strength)
-		# Decay the external force over time
-		external_attraction_force = external_attraction_force * 0.98
 
 	# 1. Anchor force - keep anchor node at center
 	if is_anchor:
@@ -63,16 +66,10 @@ func apply_forces(_delta: float):
 					var spring_force = direction * displacement * attraction_strength
 					apply_central_force(spring_force)
 				else:
-					# Repulsion force - push unconnected nodes away
-					var repulsion_force = direction * repulsion_strength / distance
-					apply_central_force(-repulsion_force)
-	
-	# 3. External attraction force - for laser attraction
-	if external_attraction_force != Vector3.ZERO:
-		var external_direction = external_attraction_force.normalized()
-		var external_distance = global_transform.origin.distance_to(external_attraction_force)
-		var external_attraction = external_direction * (external_distance * external_attraction_strength)
-		apply_central_force(external_attraction)
+					# Repulsion force - push unconnected nodes away (only within max distance)
+					if distance <= max_repulsion_distance:
+						var repulsion_force = direction * repulsion_strength / distance
+						apply_central_force(-repulsion_force)
 
 func _on_collision(body):
 	# When projectile hits this node
@@ -127,7 +124,8 @@ func flash_hit():
 	)
 
 func apply_laser_attraction(laser_position: Vector3):
-	# Apply attraction force towards the laser position
+	# Directly apply attraction force towards the laser position
 	var direction = laser_position - global_position
 	if direction.length() > 0.1:
-		external_attraction_force = direction.normalized()
+		var attraction_force = direction.normalized() * external_attraction_strength
+		apply_central_force(attraction_force)

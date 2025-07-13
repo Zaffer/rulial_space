@@ -1,0 +1,43 @@
+[gd_scene load_steps=3 format=3 uid="uid://d7h9k2l5m3np4"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bullet"]
+flags_unshaded = true
+albedo_color = Color(0.5, 0, 0.5, 1)
+emission_enabled = true
+emission = Color(0.5, 0, 0.5, 1)
+
+[sub_resource type="GDScript" id="GDScript_gun_barrel"]
+script/source = "extends MeshInstance3D
+
+func _ready():
+	# Create the bullet mesh
+	var bullet_mesh = ArrayMesh.new()
+	var bullet_arrays = []
+	bullet_arrays.resize(Mesh.ARRAY_MAX)
+	
+	# Same vertices as projectile.gd
+	var bullet_vertices = PackedVector3Array([
+		Vector3(0, 0.1, 0),      # Top vertex
+		Vector3(-0.05, 0, 0.05), # Bottom front left
+		Vector3(0.05, 0, 0.05),  # Bottom front right
+		Vector3(0, 0, -0.05)     # Bottom back
+	])
+	
+	# Same faces as projectile.gd
+	var bullet_indices = PackedInt32Array([
+		0, 1, 2,  # Front face
+		0, 3, 1,  # Left face
+		0, 2, 3,  # Right face
+		1, 3, 2   # Bottom face
+	])
+	
+	bullet_arrays[Mesh.ARRAY_VERTEX] = bullet_vertices
+	bullet_arrays[Mesh.ARRAY_INDEX] = bullet_indices
+	
+	bullet_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, bullet_arrays)
+	mesh = bullet_mesh
+"
+
+[node name="GunBarrel" type="MeshInstance3D"]
+material_override = SubResource("StandardMaterial3D_bullet")
+script = SubResource("GDScript_gun_barrel")

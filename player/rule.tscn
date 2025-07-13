@@ -52,15 +52,15 @@ grow_vertical = 2
 
 [node name="LHSLabel" type="Label" parent="Panel/HBoxContainer"]
 layout_mode = 2
-text = "●-●-🔵"
+text = "🔵-🔵-🔵"
 label_settings = SubResource("LabelSettings_1")
 
 [node name="ArrowLabel" type="Label" parent="Panel/HBoxContainer"]
 layout_mode = 2
-text = " → "
+text = " -> "
 label_settings = SubResource("LabelSettings_2")
 
 [node name="RHSLabel" type="Label" parent="Panel/HBoxContainer"]
 layout_mode = 2
-text = "●-●"
+text = "🔵-🔵"
 label_settings = SubResource("LabelSettings_3")

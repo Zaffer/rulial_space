@@ -42,10 +42,9 @@ func _setup_spaceship():
 	spaceship.collision_layer = 2
 	spaceship.collision_mask = 1
 	
-	# Add visual mesh
-	var spaceship_mesh = MeshInstance3D.new()
-	var spaceship_script = load("res://player/spaceship.gd")
-	spaceship_mesh.set_script(spaceship_script)
+	# Load the spaceship scene
+	var spaceship_scene = preload("res://player/spaceship.tscn")
+	var spaceship_mesh = spaceship_scene.instantiate()
 	spaceship.add_child(spaceship_mesh)
 	
 	# Add collision shape
@@ -153,17 +152,19 @@ func shoot_projectile():
 
 func use_attraction_laser():
 	var spaceship_mesh = spaceship.get_child(0)
-	var laser_beam = spaceship_mesh.get_meta("laser_beam", null)
+	var laser_beam = spaceship_mesh.get_node("LaserBeam")
 	if not laser_beam:
 		return
 	
 	var space_state = get_world_3d().direct_space_state
-	var beam_start = laser_beam.global_position
-	var beam_direction = -laser_beam.global_transform.basis.z
-	var beam_end = beam_start + beam_direction * laser_range  # Use laser_range variable
+	
+	# Use gun barrel position as the start point and camera's forward direction
+	var beam_start = spaceship_mesh.call("get_gun_barrel_position")
+	var beam_direction = -transform.basis.z
+	var beam_end = beam_start + beam_direction * laser_range
 	
 	var query = PhysicsRayQueryParameters3D.create(beam_start, beam_end)
-	query.collision_mask = 1
+	query.collision_mask = 1  # Only nodes
 	
 	var result = space_state.intersect_ray(query)
 	if result and result.collider.is_in_group("nodes"):
@@ -180,7 +181,7 @@ func use_attraction_laser():
 
 func _handle_laser(active: bool):
 	var spaceship_mesh = spaceship.get_child(0)
-	var laser_beam = spaceship_mesh.get_meta("laser_beam", null)
+	var laser_beam = spaceship_mesh.get_node("LaserBeam")
 	
 	if laser_beam:
 		laser_beam.visible = active

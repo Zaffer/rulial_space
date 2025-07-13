@@ -28,6 +28,11 @@ pause={
 ]
 }
 
+[physics]
+
+3d/default_gravity=9.8
+3d/default_gravity_vector=Vector3(0, 0, 0)
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

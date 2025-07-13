@@ -1,0 +1,37 @@
+[gd_scene load_steps=6 format=3 uid="uid://iqt3vsx8isk8"]
+
+[ext_resource type="Script" path="res://player/spaceship.gd" id="1_spaceship"]
+[ext_resource type="PackedScene" path="res://player/gun_barrel.tscn" id="2_gun_barrel"]
+[ext_resource type="PackedScene" path="res://player/laser_beam.tscn" id="3_laser_beam"]
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_spaceship"]
+_surfaces = [{
+"aabb": AABB(0, 0, 0, 0, 0, 0),
+"format": 34359738368,
+"primitive": 5,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 0,
+"vertex_data": PackedByteArray()
+}]
+blend_shape_mode = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_spaceship"]
+cull_mode = 2
+albedo_color = Color(1, 0.271, 0, 1)
+metallic = 0.8
+roughness = 0.3
+emission_enabled = true
+emission = Color(0.545, 0, 0, 0.3)
+
+[node name="Spaceship" type="MeshInstance3D"]
+mesh = SubResource("ArrayMesh_spaceship")
+surface_material_override/0 = SubResource("StandardMaterial3D_spaceship")
+script = ExtResource("1_spaceship")
+
+[node name="GunBarrel" parent="." instance=ExtResource("2_gun_barrel")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -0.8, 0, 0.3)
+visible = false
+
+[node name="LaserBeam" parent="." instance=ExtResource("3_laser_beam")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, 0, -24.7)
+visible = false
